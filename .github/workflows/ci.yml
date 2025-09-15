@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup SelfControl.app
+      run: |
+        # Install SelfControl.app for testing
+        brew install --cask selfcontrol
+    
+    - name: Test script syntax
+      run: |
+        bash -n bin/selfcontrol-cli
+        bash -n lib/*.sh
+        bash -n scripts/*.sh
+        bash -n tests/*.sh
+    
+    - name: Test JSON configuration
+      run: |
+        python3 -m json.tool config/schedule.json
+        python3 -m json.tool config/schedule.example.json
+    
+    - name: Test blocklist validation
+      run: |
+        # Validate all blocklist files are valid XML
+        for blocklist in config/*.selfcontrol; do
+          if [ -f "$blocklist" ]; then
+            echo "Validating blocklist: $blocklist"
+            # Use xmllint instead of Python for XML validation
+            if command -v xmllint >/dev/null 2>&1; then
+              if xmllint --noout "$blocklist" 2>/dev/null; then
+                echo "✅ Valid XML: $blocklist"
+              else
+                echo "❌ Invalid XML: $blocklist"
+                exit 1
+              fi
+            else
+              echo "⚠️ xmllint not available, skipping XML validation for $blocklist"
+            fi
+          fi
+        done
+    
+    - name: Run test suite
+      run: |
+        chmod +x tests/test_runner.sh
+        ./tests/test_runner.sh
+    
+    - name: Test installation script
+      run: |
+        chmod +x scripts/install-production.sh
+        ./scripts/install-production.sh --help

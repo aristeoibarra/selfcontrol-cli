@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <string>facebook.com</string>
+    <string>twitter.com</string>
+    <string>instagram.com</string>
+    <string>youtube.com</string>
+    <string>reddit.com</string>
+    <string>tiktok.com</string>
+    <string>snapchat.com</string>
+    <string>discord.com</string>
+    <string>slack.com</string>
+    <string>whatsapp.com</string>
+</array>
+</plist>

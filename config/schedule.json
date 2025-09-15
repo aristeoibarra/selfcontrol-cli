@@ -1,0 +1,57 @@
+{
+  "global_settings": {
+    "check_interval": 5,
+    "timezone": "auto",
+    "default_duration": 2,
+    "log_level": "info",
+    "prevent_duplicates": true,
+    "auto_extend": false
+  },
+  "schedules": [
+    {
+      "name": "work_hours",
+      "description": "Deep focus work time",
+      "start_time": "08:00",
+      "end_time": "17:00",
+      "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      "enabled": true,
+      "duration_hours": 8,
+      "blocklist_file": "work",
+      "priority": 1
+    },
+    {
+      "name": "night_block",
+      "description": "Complete digital rest",
+      "start_time": "23:00",
+      "end_time": "06:00",
+      "days": ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
+      "enabled": false,
+      "duration_hours": 7,
+      "blocklist_file": "work",
+      "priority": 1
+    }
+  ],
+  "blocklists": {
+    "default": "blocklist.selfcontrol",
+    "work": "blocklist.work.selfcontrol",
+    "minimal": "blocklist.minimal.selfcontrol"
+  },
+  "notifications": {
+    "enabled": false,
+    "start_notification": true,
+    "end_notification": true
+  },
+  "logging": {
+    "enabled": true,
+    "max_size_mb": 10,
+    "keep_days": 30,
+    "rotation": true
+  },
+  "advanced": {
+    "overlap_handling": "priority",
+    "missed_start_tolerance": 15,
+    "grace_period": 5,
+    "auto_retry_failed": true,
+    "retry_interval": 5
+  }
+}

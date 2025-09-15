@@ -1,0 +1,19 @@
+# Personal configuration
+blocklist.selfcontrol
+schedule_config.json
+
+# Logs and runtime data
+logs/
+*.log
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
