@@ -1,0 +1,14 @@
+# Personal configuration
+blocklist.selfcontrol
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
