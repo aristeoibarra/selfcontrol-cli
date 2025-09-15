@@ -13,7 +13,14 @@ set -euo pipefail
 # Determine script location
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-readonly LIB_DIR="$ROOT_DIR/lib"
+
+# Check if we're in development mode (lib directory exists relative to script)
+if [[ -d "$ROOT_DIR/lib" && -f "$ROOT_DIR/lib/core.sh" ]]; then
+    readonly LIB_DIR="$ROOT_DIR/lib"
+else
+    # Production mode - libraries are in ~/.local/lib/selfcontrol-cli
+    readonly LIB_DIR="$HOME/.local/lib/selfcontrol-cli"
+fi
 
 # Source libraries
 # shellcheck source=lib/core.sh
@@ -83,7 +90,7 @@ cmd_version() {
 cmd_init() {
     echo "🚀 Initializing SelfControl CLI..."
     echo ""
-    
+
     # Create default configuration if it doesn't exist
     if [[ ! -f "$SCHEDULE_CONFIG" ]]; then
         local example_config="$ROOT_DIR/config/schedule.example.json"
@@ -114,7 +121,7 @@ JSON
             echo "✅ Created minimal default configuration"
         fi
     fi
-    
+
     # Create default blocklist if it doesn't exist
     local default_blocklist="$ROOT_DIR/config/blocklist.selfcontrol"
     if [[ ! -f "$default_blocklist" ]]; then
@@ -126,7 +133,7 @@ JSON
             echo "⚠️  No default blocklist found. Please create: $default_blocklist"
         fi
     fi
-    
+
     echo ""
     echo "🎉 SelfControl CLI initialized successfully!"
     echo ""

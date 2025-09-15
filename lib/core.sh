@@ -29,9 +29,16 @@ else
     readonly SELFCONTROL_ROOT_DIR="$(pwd)"
 fi
 
-# Configuration paths
-readonly SCHEDULE_CONFIG="$SELFCONTROL_ROOT_DIR/config/schedule.json"
-readonly SCHEDULE_LOG="$SELFCONTROL_ROOT_DIR/logs/schedule.log"
+# Configuration paths - support both development and production
+if [[ -d "$SELFCONTROL_ROOT_DIR/config" ]]; then
+    # Development mode
+    readonly SCHEDULE_CONFIG="$SELFCONTROL_ROOT_DIR/config/schedule.json"
+    readonly SCHEDULE_LOG="$SELFCONTROL_ROOT_DIR/logs/schedule.log"
+else
+    # Production mode
+    readonly SCHEDULE_CONFIG="$HOME/.config/selfcontrol-cli/schedule.json"
+    readonly SCHEDULE_LOG="$HOME/.local/share/selfcontrol-cli/logs/schedule.log"
+fi
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -64,7 +71,7 @@ log_message() {
     local message="$2"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     if [[ -n "${SCHEDULE_LOG:-}" ]]; then
         echo "[$timestamp] [$level] $message" >> "$SCHEDULE_LOG"
     fi
@@ -123,7 +130,7 @@ is_time_active() {
     start_minutes=$(time_to_minutes "$start_time")
     local end_minutes
     end_minutes=$(time_to_minutes "$end_time")
-    
+
     # Handle midnight crossover
     if [[ $start_minutes -gt $end_minutes ]]; then
         # Schedule crosses midnight
@@ -136,7 +143,7 @@ is_time_active() {
             return 0
         fi
     fi
-    
+
     return 1
 }
 
@@ -147,7 +154,7 @@ get_remaining_minutes() {
     current_minutes=$(get_current_time_minutes)
     local end_minutes
     end_minutes=$(time_to_minutes "$end_time")
-    
+
     if [[ $current_minutes -lt $end_minutes ]]; then
         echo $((end_minutes - current_minutes))
     else
@@ -164,11 +171,11 @@ json_get_value() {
     local json="$1"
     local key="$2"
     local default="${3:-}"
-    
+
     # Simple JSON parsing using sed
     local value
     value=$(echo "$json" | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p")
-    
+
     if [[ -n "$value" ]]; then
         echo "$value"
     else
@@ -180,7 +187,7 @@ json_get_value() {
 json_get_array() {
     local json="$1"
     local key="$2"
-    
+
     # Extract array content
     echo "$json" | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p" | \
     sed 's/"//g' | sed 's/[[:space:]]*,[[:space:]]*/\n/g'
@@ -189,11 +196,11 @@ json_get_array() {
 # Validate JSON syntax
 validate_json_syntax() {
     local json_file="$1"
-    
+
     if [[ ! -f "$json_file" ]]; then
         return 1
     fi
-    
+
     # Use python to validate JSON
     python3 -m json.tool "$json_file" >/dev/null 2>&1
 }
@@ -207,7 +214,7 @@ is_selfcontrol_running() {
     if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
         return 1
     fi
-    
+
     sudo "$SELFCONTROL_CLI_PATH" is-running >/dev/null 2>&1
 }
 
@@ -216,7 +223,7 @@ get_selfcontrol_settings() {
     if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
         return 1
     fi
-    
+
     sudo "$SELFCONTROL_CLI_PATH" settings 2>/dev/null
 }
 
@@ -224,24 +231,24 @@ get_selfcontrol_settings() {
 start_selfcontrol_block() {
     local hours="$1"
     local blocklist_file="$2"
-    
+
     if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
         die "SelfControl CLI not found at $SELFCONTROL_CLI_PATH"
     fi
-    
+
     if [[ ! -f "$blocklist_file" ]]; then
         die "Blocklist file not found: $blocklist_file"
     fi
-    
+
     # Calculate end date
     local minutes_to_add
     minutes_to_add=$(echo "$hours * 60" | bc | cut -d. -f1)
     local end_date
     end_date=$(date -v +${minutes_to_add}M '+%Y-%m-%d %H:%M:%S')
-    
+
     # Start block
     sudo "$SELFCONTROL_CLI_PATH" start "$hours" "$blocklist_file"
-    
+
     log_info "Started SelfControl block for $hours hours until $end_date"
 }
 
@@ -259,28 +266,28 @@ sanitize_input() {
 # Validate schedule name
 validate_schedule_name() {
     local name="$1"
-    
+
     # Check if name contains only valid characters
     if [[ ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
         return 1
     fi
-    
+
     # Check length
     if [[ ${#name} -lt 1 || ${#name} -gt 50 ]]; then
         return 1
     fi
-    
+
     return 0
 }
 
 # Validate time format (HH:MM)
 validate_time_format() {
     local time="$1"
-    
+
     if [[ ! "$time" =~ ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
         return 1
     fi
-    
+
     return 0
 }
 
@@ -294,18 +301,18 @@ init_selfcontrol_cli() {
     if [[ ! -d "$SELFCONTROL_APP_PATH" ]]; then
         die "SelfControl.app not found. Please install from https://selfcontrolapp.com"
     fi
-    
+
     # Check if CLI is available
     if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
         die "SelfControl CLI not found at $SELFCONTROL_CLI_PATH"
     fi
-    
+
     # Create logs directory
     if [[ -n "${SCHEDULE_LOG:-}" ]]; then
         local log_dir
         log_dir=$(dirname "$SCHEDULE_LOG")
         mkdir -p "$log_dir"
     fi
-    
+
     return 0
 }
