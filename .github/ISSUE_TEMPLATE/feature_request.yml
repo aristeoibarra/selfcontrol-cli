@@ -26,7 +26,7 @@ body:
       description: Is your feature request related to a problem? Please describe.
       placeholder: |
         A clear description of what the problem is. Ex. I'm always frustrated when [...]
-        
+
         A clear description of what you want to happen.
     validations:
       required: true
