@@ -5,6 +5,7 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 ## 🌟 Features
 
 ### Core Features
+
 - 🚀 **Unified command interface** - All functionality through single `selfcontrol-cli` command
 - 📊 **Intelligent status reporting** with detailed block and schedule information
 - 🔒 **Easy manual block management** with flexible duration options
@@ -12,6 +13,7 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 - 💡 **Helpful command suggestions** with contextual guidance
 
 ### 🆕 Advanced Scheduling System
+
 - ⏰ **Fully customizable scheduled blocks** with JSON configuration
 - 🤖 **Automatic execution** via cron integration with smart conflict resolution
 - 📅 **Flexible time ranges** including midnight crossover support (e.g., 23:00-06:00)
@@ -19,8 +21,11 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 - 🔍 **Real-time schedule testing** and debugging tools
 - 📊 **Comprehensive logging** with rotation and structured output
 - 🛡️ **Duplicate prevention** to avoid conflicts with manual blocks
+- 🔐 **Passwordless sudo integration** for seamless automation
+- 🚀 **100% automated operation** - no manual intervention required
 
 ### 🔧 Production-Ready Features
+
 - 📁 **Standardized configuration** following XDG Base Directory specification
 - 🧪 **Comprehensive testing** with validation and error recovery
 - 🔒 **Enhanced security** with input validation and safe defaults
@@ -40,24 +45,30 @@ cd selfcontrol-cli
 ```
 
 The installer will:
+
 - ✅ Check prerequisites and validate environment
 - 📁 Install files to standardized locations (`~/.local/bin`, `~/.config`, etc.)
 - 🔗 Setup PATH and shell integration automatically
 - ⚙️ Configure initial schedules and automation
+- 🤖 Setup cron job for automatic execution every 5 minutes
+- 🔐 Configure passwordless sudo for seamless automation
 - 🎯 Guide you through customization options
 
 ## 📋 Command Reference
 
 ### 📊 Status & Information
+
 - `selfcontrol-cli status` - Quick status with schedule info
 - `selfcontrol-cli info` - Detailed block information
 - `selfcontrol-cli version` - Version and system information
 
 ### 🚀 Block Management
+
 - `selfcontrol-cli start [hours]` - Start manual block (default: 2 hours)
 - `selfcontrol-cli help` - Show comprehensive help
 
 ### ⏰ Schedule Management
+
 - `selfcontrol-cli schedule list` - Show all configured schedules
 - `selfcontrol-cli schedule status` - Show current schedule status
 - `selfcontrol-cli schedule enable <name>` - Enable specific schedule
@@ -67,6 +78,7 @@ The installer will:
 - `selfcontrol-cli schedule setup` - Setup automated scheduling with cron
 
 ### 🔧 Utility Commands
+
 - `selfcontrol-cli init` - Initialize configuration and directories
 
 ## ⚙️ Configuration
@@ -157,15 +169,64 @@ Complete example with all features:
 ```
 
 ### Configuration Features
+
 - **Midnight crossover**: `"start_time": "23:00", "end_time": "06:00"`
 - **Flexible days**: Any combination of weekdays
 - **Priority system**: Lower numbers = higher priority for overlaps
 - **Multiple blocklists**: Different contexts (work, study, minimal)
 - **Smart logging**: Automatic rotation and cleanup
 
+## 🤖 Complete Automation Setup
+
+### Automatic Operation (No Manual Intervention Required)
+
+Once installed and configured, SelfControl CLI operates **100% automatically**:
+
+#### ✅ What Happens Automatically:
+
+- **Every 5 minutes**: Cron checks for active schedules
+- **Work hours (Mon-Fri 08:00-19:00)**: Automatically starts blocking
+- **Night hours (Daily 23:00-06:00)**: Automatically starts night blocking
+- **Schedule transitions**: Seamlessly switches between different blocklists
+- **After computer restart**: Continues working automatically
+- **No password prompts**: Uses passwordless sudo configuration
+
+#### 🔧 Setup for Complete Automation:
+
+```bash
+# 1. Install with automation
+./scripts/install-production.sh
+
+# 2. Configure passwordless sudo (one-time setup)
+sudo tee /etc/sudoers.d/selfcontrol-cli << 'EOF'
+# SelfControl CLI - Allow without password
+aristeoibarra ALL=(ALL) NOPASSWD: /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
+EOF
+
+# 3. Update cron job to use sudo
+(crontab -l 2>/dev/null | grep -v "selfcontrol-cli"; echo "*/5 * * * * sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check >/dev/null 2>&1") | crontab -
+
+# 4. Verify automation is working
+selfcontrol-cli schedule test
+```
+
+#### 📊 Monitoring Automation:
+
+```bash
+# Check if automation is working
+selfcontrol-cli status
+
+# View automation logs
+tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
+
+# Verify cron job
+crontab -l | grep selfcontrol-cli
+```
+
 ## 🎯 Use Cases & Examples
 
 ### 1. Work Schedule
+
 ```bash
 # Enable deep focus during work hours
 selfcontrol-cli schedule enable work_hours
@@ -178,6 +239,7 @@ selfcontrol-cli schedule test
 ```
 
 ### 2. Digital Wellness Routine
+
 ```bash
 # Setup evening wind-down
 selfcontrol-cli schedule enable digital_sunset
@@ -190,6 +252,7 @@ selfcontrol-cli schedule list
 ```
 
 ### 3. Manual Blocking
+
 ```bash
 # Quick 2-hour focus session
 selfcontrol-cli start
@@ -202,6 +265,7 @@ selfcontrol-cli start 0.5
 ```
 
 ### 4. Schedule Management
+
 ```bash
 # Disable all schedules for vacation
 selfcontrol-cli schedule disable work_hours
@@ -257,6 +321,7 @@ export SELFCONTROL_CLI_DEBUG=1
 ### Common Issues
 
 **❌ "Command not found: selfcontrol-cli"**
+
 ```bash
 # Solution: Ensure PATH includes ~/.local/bin
 export PATH="$PATH:$HOME/.local/bin"
@@ -264,18 +329,26 @@ export PATH="$PATH:$HOME/.local/bin"
 ```
 
 **❌ "No configuration found"**
+
 ```bash
 # Solution: Initialize configuration
 selfcontrol-cli init
 ```
 
 **❌ "Schedules not working"**
+
 ```bash
 # Solution: Setup automated scheduling
 selfcontrol-cli schedule setup
 
 # Test schedule logic
 selfcontrol-cli schedule test
+
+# Check if cron is running
+crontab -l | grep selfcontrol-cli
+
+# Verify sudo configuration
+sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
 ```
 
 ### Debug Mode
@@ -311,6 +384,7 @@ For comprehensive troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING
 ## 🤝 Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
 - Development setup and guidelines
 - Code standards and testing
 - Pull request process
@@ -323,10 +397,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🆘 Support
 
 ### Documentation & Self-Help
+
 - **Troubleshooting**: [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - **API Reference**: [docs/API.md](docs/API.md)
 
 ### Community Support
+
 - **GitHub Issues**: Bug reports and feature requests
 - **GitHub Discussions**: Questions and community support
 
