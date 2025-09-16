@@ -479,7 +479,6 @@ main() {
             cmd_start "$1"
             ;;
         "schedule"|"sched")
-            shift
             cmd_schedule "$@"
             ;;
         *)

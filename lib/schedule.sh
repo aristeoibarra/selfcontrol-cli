@@ -110,7 +110,7 @@ is_day_active() {
     local current_day
     current_day=$(get_current_day)
 
-    echo "$schedule_days" | grep -q "\"$current_day\""
+    echo "$schedule_days" | grep -q "^$current_day$"
 }
 
 # Check if schedule is currently active
@@ -168,13 +168,19 @@ except:
     fi
 
     # Check each schedule
-    echo "$schedules" | while read -r schedule; do
+    # Check each schedule
+    local active_schedule=""
+    while read -r schedule; do
         if is_schedule_active "$schedule"; then
-            echo "$schedule"
-            return 0
+            active_schedule="$schedule"
+            break
         fi
-    done
-
+    done <<< "$schedules"
+    
+    if [[ -n "$active_schedule" ]]; then
+        echo "$active_schedule"
+        return 0
+    fi
     return 1
 }
 
@@ -214,15 +220,15 @@ check_and_execute_schedules() {
 
     # Get blocklist path
     local blocklist_path
-    blocklist_path="$SELFCONTROL_ROOT_DIR/config/blocklist.$blocklist_file.selfcontrol"
+    blocklist_path="$HOME/.config/selfcontrol-cli/blocklist.$blocklist_file.selfcontrol"
 
     if [[ ! -f "$blocklist_path" ]]; then
-        blocklist_path="$SELFCONTROL_ROOT_DIR/config/blocklist.selfcontrol"
+        blocklist_path="$HOME/.config/selfcontrol-cli/blocklist.selfcontrol"
     fi
 
     # Start block
-    log_info "Starting scheduled block '$schedule_name' for $remaining_hours hours"
-    start_selfcontrol_block "$remaining_hours" "$blocklist_path"
+    log_info "Starting scheduled block '$schedule_name' for $remaining_minutes minutes"
+    start_selfcontrol_block "$remaining_minutes" "$blocklist_path"
 }
 
 # =============================================================================

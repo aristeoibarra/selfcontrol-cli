@@ -193,11 +193,17 @@ json_get_array() {
     local json="$1"
     local key="$2"
 
-    # Extract array content
-    echo "$json" | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p" | \
-    sed 's/"//g' | sed 's/[[:space:]]*,[[:space:]]*/\n/g'
+    echo "$json" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    array = data.get('$key', [])
+    for item in array:
+        print(item)
+except:
+    pass
+"
 }
-
 # Validate JSON syntax
 validate_json_syntax() {
     local json_file="$1"
@@ -288,11 +294,16 @@ start_selfcontrol_block() {
     fi
 
     echo "🔒 Initiating block directly..."
+    echo "⚠️  This requires administrator privileges (sudo)"
+
     if sudo "$selfcontrol_binary" "$user_id" --install; then
         echo "✅ Block started successfully!"
         echo "🚫 Sites are now blocked for $minutes minutes"
     else
-        die "Failed to start SelfControl block"
+        echo "❌ Failed to start SelfControl block"
+        echo "💡 Make sure you have administrator privileges"
+        echo "💡 You may need to enter your password when prompted"
+        return 1
     fi
 
     log_info "Started SelfControl block for $minutes minutes"
