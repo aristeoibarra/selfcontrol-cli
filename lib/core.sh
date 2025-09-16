@@ -172,9 +172,14 @@ json_get_value() {
     local key="$2"
     local default="${3:-}"
 
-    # Simple JSON parsing using sed
+    # Try to extract quoted string values first
     local value
     value=$(echo "$json" | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p")
+
+    # If no quoted value found, try boolean/number values
+    if [[ -z "$value" ]]; then
+        value=$(echo "$json" | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\([^,}]*\).*/\1/p" | tr -d ' ')
+    fi
 
     if [[ -n "$value" ]]; then
         echo "$value"
@@ -215,7 +220,12 @@ is_selfcontrol_running() {
         return 1
     fi
 
-    sudo "$SELFCONTROL_CLI_PATH" is-running >/dev/null 2>&1
+    # Use grep to check for presence of YES (output goes to stderr)
+    if sudo "$SELFCONTROL_CLI_PATH" is-running 2>&1 | grep -q "YES"; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Get SelfControl settings
@@ -229,7 +239,7 @@ get_selfcontrol_settings() {
 
 # Start SelfControl block
 start_selfcontrol_block() {
-    local hours="$1"
+    local minutes="$1"
     local blocklist_file="$2"
 
     if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
@@ -240,16 +250,52 @@ start_selfcontrol_block() {
         die "Blocklist file not found: $blocklist_file"
     fi
 
-    # Calculate end date
-    local minutes_to_add
-    minutes_to_add=$(echo "$hours * 60" | bc | cut -d. -f1)
-    local end_date
-    end_date=$(date -v +${minutes_to_add}M '+%Y-%m-%d %H:%M:%S')
+    # Read blocklist and set preferences
+    local blocklist_array
+    blocklist_array=$(plutil -extract 0 xml1 -o - "$blocklist_file" 2>/dev/null | grep -o '<string>[^<]*</string>' | sed 's/<string>\(.*\)<\/string>/\1/')
 
-    # Start block
-    sudo "$SELFCONTROL_CLI_PATH" start "$hours" "$blocklist_file"
+    if [[ -z "$blocklist_array" ]]; then
+        die "Could not read blocklist from $blocklist_file"
+    fi
 
-    log_info "Started SelfControl block for $hours hours until $end_date"
+    # Set SelfControl preferences
+    defaults delete org.eyebeam.SelfControl Blocklist 2>/dev/null || true
+
+    # Add each site to blocklist
+    while IFS= read -r site; do
+        if [[ -n "$site" ]]; then
+            defaults write org.eyebeam.SelfControl Blocklist -array-add "$site"
+        fi
+    done <<< "$blocklist_array"
+
+    # Set duration in minutes
+    # minutes is already in minutes
+    defaults write org.eyebeam.SelfControl BlockDuration -int "$minutes"
+
+    # Start SelfControl block directly without opening the app
+    echo "🚀 Starting SelfControl block..."
+    echo "   Duration: $minutes minutes"
+    echo "   Sites to block: $(defaults read org.eyebeam.SelfControl Blocklist 2>/dev/null | tr '\n' ' ')"
+    echo ""
+
+    # Use direct command instead of opening the app
+    local user_id
+    user_id=$(id -u "$(whoami)")
+    local selfcontrol_binary="/Applications/SelfControl.app/Contents/MacOS/org.eyebeam.SelfControl"
+
+    if [[ ! -x "$selfcontrol_binary" ]]; then
+        die "SelfControl binary not found at $selfcontrol_binary"
+    fi
+
+    echo "🔒 Initiating block directly..."
+    if sudo "$selfcontrol_binary" "$user_id" --install; then
+        echo "✅ Block started successfully!"
+        echo "🚫 Sites are now blocked for $minutes minutes"
+    else
+        die "Failed to start SelfControl block"
+    fi
+
+    log_info "Started SelfControl block for $minutes minutes"
 }
 
 # =============================================================================

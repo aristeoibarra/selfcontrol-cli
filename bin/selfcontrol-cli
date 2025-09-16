@@ -47,7 +47,7 @@ COMMANDS:
     version             Show version and system information
 
 🚀 Block Management:
-    start [hours]       Start manual block (default: 2 hours)
+    start [minutes]       Start manual block (default: 120 minutes)
 
 ⏰ Schedule Management:
     schedule list       Show all configured schedules
@@ -62,7 +62,7 @@ COMMANDS:
     init                Initialize configuration and directories
 
 EXAMPLES:
-    selfcontrol-cli start 4             # Block for 4 hours
+    selfcontrol-cli start 240           # Block for 4 hours (240 minutes)
     selfcontrol-cli schedule list       # Show all schedules
     selfcontrol-cli schedule enable work_hours
     selfcontrol-cli schedule test       # Test schedule logic
@@ -150,8 +150,7 @@ cmd_status() {
         die "Failed to initialize SelfControl CLI"
     fi
 
-    case $(is_selfcontrol_running) in
-        0)
+    if is_selfcontrol_running; then
             echo "🔒 SelfControl: ACTIVE"
 
             # Get detailed info if available
@@ -183,9 +182,8 @@ cmd_status() {
                     echo "📅 Active schedule: $schedule_name"
                 fi
             fi
-            ;;
-        *)
-            echo "✅ SelfControl: INACTIVE"
+    else
+        echo "✅ SelfControl: INACTIVE"
             # Check if there's an active schedule that should be running
             if [[ -f "$SCHEDULE_CONFIG" ]]; then
                 local active_schedule
@@ -203,8 +201,7 @@ cmd_status() {
             else
                 echo "💡 Ready to start a new block"
             fi
-            ;;
-    esac
+    fi
 }
 
 # Detailed information
@@ -249,8 +246,8 @@ cmd_info() {
 
 # Start manual block
 cmd_start() {
-    local hours="${1:-2}"
-    local blocklist_file="$ROOT_DIR/config/blocklist.selfcontrol"
+    local minutes="${1:-120}"
+    local blocklist_file="$HOME/.config/selfcontrol-cli/blocklist.selfcontrol"
 
     if ! init_selfcontrol_cli; then
         die "Failed to initialize SelfControl CLI"
@@ -263,9 +260,9 @@ cmd_start() {
         exit 1
     fi
 
-    # Validate hours
-    if ! echo "$hours" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
-        die "Invalid hours format: $hours"
+    # Validate minutes
+    if ! echo "$minutes" | grep -qE '^[0-9]+(\.[0-9]+)?$'; then
+        die "Invalid minutes format: $minutes"
     fi
 
     # Check if blocklist exists
@@ -274,18 +271,27 @@ cmd_start() {
     fi
 
     # Calculate end date
-    local minutes_to_add
-    minutes_to_add=$(echo "$hours * 60" | bc | cut -d. -f1)
+    local minutes_to_add=$minutes
+    # minutes_to_add is already in minutes
     local end_date
     end_date=$(date -v +${minutes_to_add}M '+%Y-%m-%d %H:%M:%S')
 
     echo "🚀 Starting SelfControl block..."
-    echo "Duration: $hours hours"
+    # Display duration in a clear format
+    if [[ $minutes -lt 60 ]]; then
+        echo "Duration: $minutes minutes"
+    elif [[ $minutes -eq 60 ]]; then
+        echo "Duration: 1 hour"
+    else
+        local hours_display
+        hours_display=$(echo "scale=1; $minutes / 60" | bc)
+        echo "Duration: $hours_display hours"
+    fi
     echo "Ends at: $end_date"
     echo ""
 
     # Start block
-    start_selfcontrol_block "$hours" "$blocklist_file"
+    start_selfcontrol_block "$minutes" "$blocklist_file"
 
     echo "✅ Block started successfully!"
     echo "Use 'selfcontrol-cli status' to check remaining time"
@@ -314,9 +320,18 @@ cmd_schedule() {
                 return 1
             fi
 
-            # Extract schedules array
+            # Extract schedules array using python for better JSON parsing
             local schedules
-            schedules=$(echo "$config" | sed -n 's/.*"schedules"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p')
+            schedules=$(echo "$config" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    schedules = data.get('schedules', [])
+    for schedule in schedules:
+        print(json.dumps(schedule))
+except:
+    pass
+")
 
             if [[ -z "$schedules" ]]; then
                 echo "No schedules configured."
@@ -324,7 +339,7 @@ cmd_schedule() {
             fi
 
             # Display each schedule
-            echo "$schedules" | grep -o '{"[^}]*"name"[^}]*"[^"]*"' | while read -r schedule; do
+            echo "$schedules" | while read -r schedule; do
                 local name enabled start_time end_time days description
                 name=$(json_get_value "$schedule" "name")
                 enabled=$(json_get_value "$schedule" "enabled" "false")
@@ -461,8 +476,7 @@ main() {
             cmd_info
             ;;
         "start")
-            shift
-            cmd_start "$@"
+            cmd_start "$1"
             ;;
         "schedule"|"sched")
             shift

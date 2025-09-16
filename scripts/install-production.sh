@@ -40,20 +40,20 @@ print_status() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 
 validate_system() {
     print_header "🔍 System Validation"
-    
+
     # Check macOS version
     local macos_version
     macos_version=$(sw_vers -productVersion)
     local major_version
     major_version=$(echo "$macos_version" | cut -d. -f1)
-    
+
     if [[ $major_version -lt 12 ]]; then
         print_error "macOS 12.0 or later required. Current: $macos_version"
         exit 1
     fi
-    
+
     print_success "macOS version: $macos_version"
-    
+
     # Check bash version
     local bash_version
     bash_version=$(bash --version | head -n1 | cut -d' ' -f4)
@@ -62,25 +62,25 @@ validate_system() {
 
 validate_dependencies() {
     print_header "📦 Dependency Validation"
-    
+
     # Check for SelfControl.app
     if [[ ! -d "/Applications/SelfControl.app" ]]; then
         print_error "SelfControl.app not found"
         print_status "Please install from: https://selfcontrolapp.com"
         exit 1
     fi
-    
+
     print_success "SelfControl.app found"
-    
+
     # Check for SelfControl CLI
     if [[ ! -x "/Applications/SelfControl.app/Contents/MacOS/SelfControl-CLI" ]]; then
         print_error "SelfControl CLI not found"
         print_status "Please ensure SelfControl.app is properly installed"
         exit 1
     fi
-    
+
     print_success "SelfControl CLI found"
-    
+
     # Check for required tools
     local required_tools=("date" "bc" "crontab" "python3")
     for tool in "${required_tools[@]}"; do
@@ -95,13 +95,13 @@ validate_dependencies() {
 validate_permissions() {
     print_header "🔐 Permission Validation"
     print_status "Checking installation permissions..."
-    
+
     # Check write permissions
     if [[ ! -w "$HOME" ]]; then
         print_error "No write permission to home directory"
         exit 1
     fi
-    
+
     # Check if directories can be created
     local test_dir
     test_dir=$(mktemp -d)
@@ -110,7 +110,7 @@ validate_permissions() {
         exit 1
     fi
     rm -rf "$test_dir"
-    
+
     print_success "Permission validation completed"
 }
 
@@ -121,39 +121,39 @@ validate_permissions() {
 install_files() {
     print_header "📦 Installing Files"
     print_status "Installing SelfControl CLI files..."
-    
+
     # Create directories
     mkdir -p "$INSTALL_DIR" "$LIB_DIR" "$CONFIG_DIR" "$DATA_DIR/logs"
-    
+
     # Install main executable
     cp "bin/selfcontrol-cli" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/selfcontrol-cli"
     print_success "Installed main executable"
-    
+
     # Install libraries
     cp lib/*.sh "$LIB_DIR/"
     chmod +x "$LIB_DIR"/*.sh
     print_success "Installed libraries"
-    
+
     # Create default configuration
     if [[ ! -f "$CONFIG_DIR/schedule.json" ]]; then
         cp "config/schedule.json" "$CONFIG_DIR/"
         print_success "Created default configuration"
     fi
-    
+
     # Create default blocklist
     if [[ ! -f "$CONFIG_DIR/blocklist.selfcontrol" ]]; then
         cp "config/blocklist.selfcontrol" "$CONFIG_DIR/"
         print_success "Created default blocklist"
     fi
-    
+
     print_success "File installation completed"
 }
 
 setup_shell_integration() {
     print_header "🐚 Shell Integration"
     print_status "Setting up shell integration..."
-    
+
     # Determine shell profile
     local profile_file
     if [[ -n "${ZSH_VERSION:-}" ]]; then
@@ -163,18 +163,18 @@ setup_shell_integration() {
     else
         profile_file="$HOME/.profile"
     fi
-    
+
     # Add to PATH if not already present
     local path_line
     path_line="export PATH=\"\$PATH:$INSTALL_DIR\""
-    
+
     if ! grep -q "$INSTALL_DIR" "$profile_file" 2>/dev/null; then
         echo "" >> "$profile_file"
         echo "# SelfControl CLI" >> "$profile_file"
         echo "$path_line" >> "$profile_file"
         print_success "Added to PATH in $profile_file"
     fi
-    
+
     # No legacy command compatibility needed for new installation
 
     print_success "Shell integration completed"
@@ -183,28 +183,20 @@ setup_shell_integration() {
 setup_automation() {
     print_header "🤖 Automation Setup"
     print_status "Setting up automated scheduling..."
-    
-    if [[ "${BATCH_MODE:-false}" != "true" ]]; then
-        echo ""
-        echo "Would you like to enable automatic scheduled blocks? (Y/n)"
-        read -r response
-        
-        if [[ "$response" =~ ^[Nn]$ ]]; then
-            print_status "Automated scheduling skipped"
-            return 0
-        fi
-    fi
-    
+
+    # Always enable automatic scheduling without asking
+    print_status "Enabling automatic scheduled blocks..."
+
     # Check if cron job already exists
     if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
         print_warning "Cron job already exists"
         return 0
     fi
-    
+
     # Add cron job
     local cron_entry
     cron_entry="*/5 * * * * $INSTALL_DIR/selfcontrol-cli schedule check >/dev/null 2>&1"
-    
+
     (crontab -l 2>/dev/null; echo "$cron_entry") | crontab -
     print_success "Added cron job for automated scheduling"
 }
@@ -212,26 +204,26 @@ setup_automation() {
 run_post_install_tests() {
     print_header "🧪 Post-Installation Tests"
     print_status "Running installation validation tests..."
-    
+
     local cli_path="$INSTALL_DIR/selfcontrol-cli"
-    
+
     # Test CLI executable
     if [[ ! -x "$cli_path" ]]; then
         print_error "CLI executable not found or not executable: $cli_path"
         return 1
     fi
-    
+
     # Test basic commands
     if ! "$cli_path" version >/dev/null 2>&1; then
         print_error "CLI version command failed"
         return 1
     fi
-    
+
     if ! "$cli_path" help >/dev/null 2>&1; then
         print_error "CLI help command failed"
         return 1
     fi
-    
+
     print_success "Post-installation tests passed"
 }
 
@@ -261,19 +253,19 @@ show_completion_info() {
 
 uninstall() {
     print_header "🗑️  Uninstalling SelfControl CLI"
-    
+
     # Remove executable
     if [[ -f "$INSTALL_DIR/selfcontrol-cli" ]]; then
         rm "$INSTALL_DIR/selfcontrol-cli"
         print_success "Removed executable"
     fi
-    
+
     # Remove libraries
     if [[ -d "$LIB_DIR" ]]; then
         rm -rf "$LIB_DIR"
         print_success "Removed libraries"
     fi
-    
+
     # Remove from PATH
     local profile_files=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
     for profile_file in "${profile_files[@]}"; do
@@ -284,13 +276,13 @@ uninstall() {
         fi
     done
     print_success "Removed from PATH"
-    
+
     # Remove cron jobs
     if crontab -l 2>/dev/null | grep -q "selfcontrol-cli"; then
         crontab -l 2>/dev/null | grep -v "selfcontrol-cli" | crontab -
         print_success "Removed cron jobs"
     fi
-    
+
     # No legacy symlinks to remove for new installation
 
     # Ask about configuration and data
@@ -298,7 +290,7 @@ uninstall() {
         echo ""
         echo "Remove configuration and data files? (y/N)"
         read -r response
-        
+
         if [[ "$response" =~ ^[Yy]$ ]]; then
             rm -rf "$CONFIG_DIR" "$DATA_DIR"
             print_success "Configuration and data removed"
@@ -306,7 +298,7 @@ uninstall() {
             print_status "Configuration and data preserved"
         fi
     fi
-    
+
     print_success "Uninstallation completed"
 }
 
@@ -318,23 +310,23 @@ install() {
     print_header "🚀 SelfControl CLI Production Installer"
     echo "Version: $INSTALLER_VERSION"
     echo ""
-    
+
     # Check if already installed
     if [[ -x "$INSTALL_DIR/selfcontrol-cli" ]]; then
         print_warning "SelfControl CLI is already installed"
         echo "Use --force to reinstall or --uninstall to remove"
         exit 1
     fi
-    
+
     # Run installation steps
     validate_system
     validate_dependencies
     validate_permissions
-    
+
     install_files
     setup_shell_integration
     setup_automation
-    
+
     run_post_install_tests
     show_completion_info
 }
