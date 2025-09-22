@@ -16,7 +16,7 @@ readonly SELFCONTROL_CORE_LOADED=1
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-readonly SELFCONTROL_CLI_VERSION="3.0.0"
+readonly SELFCONTROL_CLI_VERSION="3.1.0"
 readonly SELFCONTROL_APP_PATH="/Applications/SelfControl.app"
 readonly SELFCONTROL_CLI_PATH="$SELFCONTROL_APP_PATH/Contents/MacOS/SelfControl-CLI"
 
@@ -243,70 +243,147 @@ get_selfcontrol_settings() {
     sudo "$SELFCONTROL_CLI_PATH" settings 2>/dev/null
 }
 
+# Validate and convert blocklist to proper format
+validate_and_convert_blocklist() {
+    local input_file="$1"
+    local output_file="$2"
+
+    # Try to read the input file
+    if ! plutil -lint "$input_file" >/dev/null 2>&1; then
+        log_error "Invalid plist format: $input_file"
+        return 1
+    fi
+
+    # Extract array contents and create a proper blocklist
+    local sites_array
+    sites_array=$(plutil -extract 0 raw -o - "$input_file" 2>/dev/null) || sites_array=$(plutil -p "$input_file" 2>/dev/null | grep '=>' | sed 's/.*=> "\(.*\)"/\1/')
+
+    if [[ -z "$sites_array" ]]; then
+        log_error "No sites found in blocklist: $input_file"
+        return 1
+    fi
+
+    # Create a clean blocklist file with proper formatting
+    cat > "$output_file" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+EOF
+
+    # Add each site to the array
+    while IFS= read -r site; do
+        if [[ -n "$site" ]]; then
+            # Clean the site name (remove quotes and extra spaces)
+            site=$(echo "$site" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+            echo "    <string>$site</string>" >> "$output_file"
+        fi
+    done <<< "$sites_array"
+
+    cat >> "$output_file" << 'EOF'
+</array>
+</plist>
+EOF
+
+    # Set proper permissions
+    chmod 644 "$output_file"
+
+    # Validate the generated file
+    if ! plutil -lint "$output_file" >/dev/null 2>&1; then
+        log_error "Generated invalid blocklist format"
+        rm -f "$output_file"
+        return 1
+    fi
+
+    return 0
+}
+
+# Read sites from blocklist for display
+read_blocklist_sites() {
+    local blocklist_file="$1"
+
+    if [[ ! -f "$blocklist_file" ]]; then
+        echo "(no sites)"
+        return 1
+    fi
+
+    plutil -p "$blocklist_file" 2>/dev/null | grep '=>' | sed 's/.*=> "\(.*\)"/\1/' | tr '\n' ' ' | sed 's/ $//'
+}
+
 # Start SelfControl block
 start_selfcontrol_block() {
     local minutes="$1"
     local blocklist_file="$2"
 
-    if [[ ! -x "$SELFCONTROL_CLI_PATH" ]]; then
-        die "SelfControl CLI not found at $SELFCONTROL_CLI_PATH"
+    local selfcontrol_cli="/Applications/SelfControl.app/Contents/MacOS/selfcontrol-cli"
+
+    if [[ ! -x "$selfcontrol_cli" ]]; then
+        die "SelfControl CLI not found at $selfcontrol_cli"
     fi
 
     if [[ ! -f "$blocklist_file" ]]; then
         die "Blocklist file not found: $blocklist_file"
     fi
 
-    # Read blocklist and set preferences
-    local blocklist_array
-    blocklist_array=$(plutil -extract 0 xml1 -o - "$blocklist_file" 2>/dev/null | grep -o '<string>[^<]*</string>' | sed 's/<string>\(.*\)<\/string>/\1/')
+    # Create a temporary blocklist in the format SelfControl CLI expects
+    local temp_blocklist="/tmp/selfcontrol-temp-blocklist-$$.selfcontrol"
 
-    if [[ -z "$blocklist_array" ]]; then
-        die "Could not read blocklist from $blocklist_file"
+    # Validate and convert blocklist format
+    if ! validate_and_convert_blocklist "$blocklist_file" "$temp_blocklist"; then
+        die "Failed to process blocklist: $blocklist_file"
     fi
 
-    # Set SelfControl preferences
-    defaults delete org.eyebeam.SelfControl Blocklist 2>/dev/null || true
+    # Calculate end time in ISO8601 format
+    local end_date
+    local int_minutes
+    int_minutes=$(echo "$minutes" | awk '{print int($1)}')
+    if [[ $int_minutes -eq 0 ]]; then
+        int_minutes=1  # Minimum 1 minute
+    fi
 
-    # Add each site to blocklist
-    while IFS= read -r site; do
-        if [[ -n "$site" ]]; then
-            defaults write org.eyebeam.SelfControl Blocklist -array-add "$site"
-        fi
-    done <<< "$blocklist_array"
+    if command -v gdate >/dev/null 2>&1; then
+        end_date=$(gdate -d "+${int_minutes} minutes" -Iseconds)
+    else
+        end_date=$(date -v+"${int_minutes}"M "+%Y-%m-%dT%H:%M:%S%z")
+    fi
 
-    # Set duration in minutes
-    # minutes is already in minutes
-    defaults write org.eyebeam.SelfControl BlockDuration -int "$minutes"
-
-    # Start SelfControl block directly without opening the app
+    # Display what we're about to do
     echo "🚀 Starting SelfControl block..."
-    echo "   Duration: $minutes minutes"
-    echo "   Sites to block: $(defaults read org.eyebeam.SelfControl Blocklist 2>/dev/null | tr '\n' ' ')"
+    echo "   Duration: $int_minutes minutes"
+    echo "   End time: $end_date"
+
+    # Read and display sites from the converted blocklist
+    local sites_list
+    sites_list=$(read_blocklist_sites "$temp_blocklist")
+    echo "   Sites to block: $sites_list"
     echo ""
 
-    # Use direct command instead of opening the app
-    local user_id
-    user_id=$(id -u "$(whoami)")
-    local selfcontrol_binary="/Applications/SelfControl.app/Contents/MacOS/org.eyebeam.SelfControl"
+    echo "🔒 Initiating block with CLI tool..."
+    echo "💡 Using CLI automation (no interactive authorization needed)"
 
-    if [[ ! -x "$selfcontrol_binary" ]]; then
-        die "SelfControl binary not found at $selfcontrol_binary"
-    fi
-
-    echo "🔒 Initiating block directly..."
-    echo "⚠️  This requires administrator privileges (sudo)"
-
-    if sudo "$selfcontrol_binary" "$user_id" --install; then
+    # Try to start the block with proper error handling
+    local result=0
+    if sudo "$selfcontrol_cli" start --blocklist "$temp_blocklist" --enddate "$end_date"; then
         echo "✅ Block started successfully!"
-        echo "🚫 Sites are now blocked for $minutes minutes"
+        echo "🚫 Sites are now blocked for $int_minutes minutes"
+        result=0
     else
         echo "❌ Failed to start SelfControl block"
         echo "💡 Make sure you have administrator privileges"
         echo "💡 You may need to enter your password when prompted"
-        return 1
+        result=1
     fi
 
-    log_info "Started SelfControl block for $minutes minutes"
+    # Clean up temporary file
+    rm -f "$temp_blocklist"
+
+    if [[ $result -eq 0 ]]; then
+        log_info "Started SelfControl block for $int_minutes minutes"
+    else
+        log_error "Failed to start SelfControl block"
+    fi
+
+    return $result
 }
 
 # =============================================================================

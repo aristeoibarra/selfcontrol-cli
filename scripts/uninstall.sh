@@ -76,10 +76,6 @@ check_installation() {
         fi
     done
 
-
-        found=true
-    fi
-
     if [[ "$found" == "false" ]]; then
         print_warning "No SelfControl CLI installation found"
         exit 0

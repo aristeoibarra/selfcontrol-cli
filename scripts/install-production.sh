@@ -180,6 +180,91 @@ setup_shell_integration() {
     print_success "Shell integration completed"
 }
 
+setup_sudo_permissions() {
+    print_header "🔐 Sudo Configuration"
+    print_status "Configuring passwordless sudo for automation..."
+
+    local username=$(whoami)
+    local cli_path="$INSTALL_DIR/selfcontrol-cli"
+    local wrapper_path="$HOME/.local/lib/selfcontrol-cli/launchagent-wrapper.sh"
+    local sudoers_file="/etc/sudoers.d/selfcontrol-cli"
+
+    # Create comprehensive sudoers configuration
+    local sudoers_content="# SelfControl CLI - Allow passwordless execution with PATH preservation
+$username ALL=(ALL) NOPASSWD: $cli_path
+$username ALL=(ALL) NOPASSWD: $wrapper_path
+Defaults!$cli_path env_keep += \"PATH HOME USER\"
+Defaults!$wrapper_path env_keep += \"PATH HOME USER\"
+Defaults!$cli_path !secure_path
+Defaults!$wrapper_path !secure_path"
+
+    # Check if already configured - improved detection
+    local sudoers_exists=false
+    local sudo_test_result=false
+
+    # Check if sudoers file exists and has our configuration
+    if [[ -f "$sudoers_file" ]] && grep -q "$username.*$cli_path" "$sudoers_file" 2>/dev/null; then
+        sudoers_exists=true
+        print_status "Sudoers file exists and contains our configuration"
+    fi
+
+    # Test if sudo actually works (only if sudoers file exists)
+    if [[ "$sudoers_exists" == "true" ]]; then
+        if sudo -n true 2>/dev/null && sudo -n "$cli_path" --version >/dev/null 2>&1; then
+            sudo_test_result=true
+            print_success "Sudo permissions already configured and working"
+            return 0
+        else
+            print_warning "Sudoers file exists but sudo test failed, reconfiguring..."
+        fi
+    fi
+
+    print_status "Configuring sudo permissions for automation..."
+
+    # Create sudoers drop-in file (safer than editing main sudoers)
+    if echo "$sudoers_content" | sudo tee "$sudoers_file" >/dev/null; then
+        # Validate the sudoers file
+        if sudo visudo -c -f "$sudoers_file" >/dev/null 2>&1; then
+            print_success "Sudo permissions configured successfully"
+            print_status "Testing sudo permissions..."
+
+            # Test the configuration with retry
+            local retry_count=0
+            local max_retries=3
+
+            while [[ $retry_count -lt $max_retries ]]; do
+                if sudo -n "$cli_path" --version >/dev/null 2>&1; then
+                    print_success "Sudo configuration working correctly"
+                    return 0
+                else
+                    ((retry_count++))
+                    if [[ $retry_count -lt $max_retries ]]; then
+                        print_status "Sudo test failed, retrying... ($retry_count/$max_retries)"
+                        sleep 1
+                    fi
+                fi
+            done
+
+            print_warning "Sudo test failed after $max_retries attempts, but configuration appears correct"
+            print_warning "This is normal in non-interactive environments"
+            return 0
+        else
+            print_error "Invalid sudoers configuration, removing..."
+            sudo rm -f "$sudoers_file"
+            print_warning "Sudo configuration failed - manual setup required"
+            print_warning "Run: sudo visudo"
+            print_warning "Add: $sudoers_content"
+            return 1
+        fi
+    else
+        print_error "Failed to create sudoers configuration"
+        print_warning "Manual sudo configuration required:"
+        print_warning "Run: sudo visudo"
+        print_warning "Add: $sudoers_content"
+        return 1
+    fi
+}
+
 setup_automation() {
     print_header "🤖 Automation Setup (LaunchAgent)"
     print_status "Setting up automated scheduling with LaunchAgent..."
@@ -204,6 +289,23 @@ setup_automation() {
     mkdir -p "$HOME/.local/templates"
     cp "templates/com.selfcontrol.cli.plist.template" "$HOME/.local/templates/"
     print_success "Installed LaunchAgent template"
+
+    # Copy and configure LaunchAgent wrapper script
+    if [[ ! -f "templates/launchagent-wrapper.sh" ]]; then
+        print_error "LaunchAgent wrapper not found: templates/launchagent-wrapper.sh"
+        return 1
+    fi
+
+    local wrapper_script="$LIB_DIR/launchagent-wrapper.sh"
+    cp "templates/launchagent-wrapper.sh" "$wrapper_script"
+
+    # Replace placeholders in wrapper script
+    sed -i '' "s|{{USER_HOME}}|$HOME|g" "$wrapper_script"
+    sed -i '' "s|{{USER_NAME}}|$(whoami)|g" "$wrapper_script"
+
+    # Make wrapper executable
+    chmod +x "$wrapper_script"
+    print_success "Installed and configured LaunchAgent wrapper"
 
     # Install LaunchAgent for scheduled blocks
     print_status "Installing LaunchAgent for scheduled blocks..."
@@ -357,6 +459,7 @@ install() {
 
     install_files
     setup_shell_integration
+    setup_sudo_permissions
     setup_automation
 
     run_post_install_tests

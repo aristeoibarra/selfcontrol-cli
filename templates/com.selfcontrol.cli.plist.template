@@ -7,9 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/sudo</string>
-        <string>-n</string>
-        <string>{{USER_HOME}}/.local/bin/selfcontrol-cli</string>
+        <string>{{USER_HOME}}/.local/lib/selfcontrol-cli/launchagent-wrapper.sh</string>
         <string>_launchagent_check</string>
     </array>
 

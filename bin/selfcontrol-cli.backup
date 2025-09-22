@@ -63,7 +63,6 @@ USAGE:
 COMMANDS:
 📊 Status & Information:
     status              Show current SelfControl and schedule status
-    status --live       Live status monitoring with real-time updates
     info                Show detailed block information
     version             Show version and system information
 
@@ -93,9 +92,6 @@ COMMANDS:
 
 🔧 Utility:
     init                Initialize configuration and directories
-    debug               Run comprehensive system diagnostics
-    logs [--follow|-f]  Show or follow application logs
-    validate            Validate configuration files
 
 EXAMPLES:
     selfcontrol-cli start 240           # Block for 4 hours (240 minutes)
@@ -180,10 +176,84 @@ JSON
     echo "4. Test with 'selfcontrol-cli schedule test'"
 }
 
-# Quick status check
-cmd_status() {
+# Live status monitoring with real-time updates
+show_live_status() {
+    local refresh_interval="$1"
+
+    echo "🔴 Live Status Monitor (Ctrl+C to exit)"
+    echo "⏰ Refresh interval: ${refresh_interval}s"
+    echo "========================================"
+
+    # Handle Ctrl+C gracefully
+    trap 'echo -e "\n👋 Live monitoring stopped"; exit 0' INT
+
+    while true; do
+        # Clear screen and show current time
+        clear
+        echo "🔴 SelfControl CLI - Live Status Monitor"
+        echo "========================================"
+        echo "📅 $(date '+%Y-%m-%d %H:%M:%S (%A)')"
+        echo "⏰ Refresh: ${refresh_interval}s | Press Ctrl+C to exit"
+        echo ""
+
+        # Show main status
+        show_single_status
+
+        echo ""
+        echo "📊 LaunchAgent Activity:"
+        echo "------------------------"
+
+        # Show recent schedule log entries
+        if [[ -f "$SCHEDULE_LOG" ]]; then
+            echo "📋 Recent Activity (last 5 entries):"
+            tail -5 "$SCHEDULE_LOG" | while IFS= read -r line; do
+                echo "   $line"
+            done
+        else
+            echo "   No schedule log found"
+        fi
+
+        echo ""
+        echo "🔄 Next update in ${refresh_interval}s..."
+
+        # Wait for refresh interval
+        sleep "$refresh_interval"
+    done
+}
+
+# Display single status check (used by both normal and live modes)
+show_single_status() {
+    local live_mode=false
+    local refresh_interval=5
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --live|-l)
+                live_mode=true
+                shift
+                ;;
+            --interval|-i)
+                refresh_interval="$2"
+                shift 2
+                ;;
+            *)
+                echo "❌ Unknown option: $1"
+                echo "Usage: selfcontrol-cli status [--live] [--interval N]"
+                echo "  --live, -l        Enable live monitoring mode"
+                echo "  --interval, -i N  Set refresh interval in seconds (default: 5)"
+                return 1
+                ;;
+        esac
+    done
+
     if ! init_selfcontrol_cli; then
         die "Failed to initialize SelfControl CLI"
+    fi
+
+    if [[ "$live_mode" == "true" ]]; then
+        show_live_status "$refresh_interval"
+        return
     fi
 
     if is_selfcontrol_running; then
@@ -474,298 +544,6 @@ cmd_service() {
 }
 
 # =============================================================================
-# NEW COMMANDS (v3.1.0)
-# =============================================================================
-
-# Live status monitoring
-cmd_status_live() {
-    local refresh_interval="${1:-5}"
-
-    if ! init_selfcontrol_cli; then
-        die "Failed to initialize SelfControl CLI"
-    fi
-
-    echo "🔴 Live Status Monitor - SelfControl CLI v$SELFCONTROL_CLI_VERSION"
-    echo "⏰ Refresh: ${refresh_interval}s | Press Ctrl+C to exit"
-    echo "============================================================"
-
-    # Handle Ctrl+C gracefully
-    trap 'echo -e "\n👋 Live monitoring stopped"; exit 0' INT
-
-    while true; do
-        # Clear screen and show header
-        clear
-        echo "🔴 SelfControl CLI - Live Status Monitor"
-        echo "============================================================"
-        echo "📅 $(date '+%Y-%m-%d %H:%M:%S (%A)')"
-        echo "⏰ Refresh: ${refresh_interval}s | Press Ctrl+C to exit"
-        echo ""
-
-        # Show current status
-        echo "📊 Current Status:"
-        echo "------------------"
-        cmd_status
-        echo ""
-
-        # Show recent schedule activity
-        echo "📋 Recent LaunchAgent Activity (last 5 entries):"
-        echo "-------------------------------------------------"
-        if [[ -f "$SCHEDULE_LOG" ]]; then
-            tail -5 "$SCHEDULE_LOG" | while IFS= read -r line; do
-                echo "   $line"
-            done
-        else
-            echo "   No schedule log found"
-        fi
-
-        echo ""
-        echo "🔄 Next update in ${refresh_interval}s..."
-
-        # Wait for refresh interval
-        sleep "$refresh_interval"
-    done
-}
-
-# Debug mode
-cmd_debug() {
-    if ! init_selfcontrol_cli; then
-        die "Failed to initialize SelfControl CLI"
-    fi
-
-    echo "🐛 SelfControl CLI Debug Information"
-    echo "====================================="
-    echo ""
-
-    # System information
-    echo "🖥️  System Information:"
-    echo "   macOS Version: $(sw_vers -productVersion)"
-    echo "   Bash Version: $BASH_VERSION"
-    echo "   User: $(whoami)"
-    echo "   HOME: $HOME"
-    echo ""
-
-    # File paths and permissions
-    echo "📁 File Paths & Permissions:"
-    echo "   Script Directory: $SCRIPT_DIR"
-    echo "   Root Directory: $ROOT_DIR"
-    echo "   Lib Directory: $LIB_DIR"
-    echo "   Config File: $SCHEDULE_CONFIG"
-    echo "   Log File: $SCHEDULE_LOG"
-    echo ""
-
-    # Check file existence and permissions
-    for file in "$SCHEDULE_CONFIG" "$SCHEDULE_LOG" "$SELFCONTROL_CLI_PATH"; do
-        if [[ -f "$file" ]]; then
-            echo "   ✅ $file ($(ls -la "$file" | cut -d' ' -f1,3,4))"
-        else
-            echo "   ❌ $file (not found)"
-        fi
-    done
-    echo ""
-
-    # SelfControl.app integration
-    echo "🔗 SelfControl.app Integration:"
-    if [[ -x "$SELFCONTROL_CLI_PATH" ]]; then
-        echo "   ✅ SelfControl CLI available"
-        echo "   Version: $(/Applications/SelfControl.app/Contents/MacOS/selfcontrol-cli version 2>/dev/null || echo 'Unknown')"
-    else
-        echo "   ❌ SelfControl CLI not found"
-    fi
-    echo ""
-
-    # LaunchAgent status
-    echo "🤖 LaunchAgent Status:"
-    local launchagent_plist="$HOME/Library/LaunchAgents/com.selfcontrol.cli.scheduler.plist"
-    if [[ -f "$launchagent_plist" ]]; then
-        echo "   ✅ LaunchAgent plist exists"
-        if launchctl list | grep -q "com.selfcontrol.cli.scheduler"; then
-            echo "   ✅ LaunchAgent loaded"
-        else
-            echo "   ❌ LaunchAgent not loaded"
-        fi
-    else
-        echo "   ❌ LaunchAgent plist not found"
-    fi
-    echo ""
-
-    # Configuration validation
-    echo "⚙️  Configuration Validation:"
-    if [[ -f "$SCHEDULE_CONFIG" ]]; then
-        if python3 -m json.tool "$SCHEDULE_CONFIG" >/dev/null 2>&1; then
-            echo "   ✅ Configuration JSON is valid"
-            local schedule_count
-            schedule_count=$(grep -c '"name"' "$SCHEDULE_CONFIG" 2>/dev/null || echo "0")
-            echo "   📋 Schedules configured: $schedule_count"
-        else
-            echo "   ❌ Configuration JSON is invalid"
-        fi
-    else
-        echo "   ❌ Configuration file not found"
-    fi
-    echo ""
-
-    # Sudo permissions check
-    echo "🔐 Sudo Permissions:"
-    local sudoers_file="/etc/sudoers.d/selfcontrol-cli"
-    if [[ -f "$sudoers_file" ]]; then
-        echo "   ✅ Sudoers file exists"
-        if sudo -n true 2>/dev/null; then
-            echo "   ✅ Sudo works without password"
-        else
-            echo "   ❌ Sudo requires password"
-        fi
-    else
-        echo "   ❌ Sudoers file not found"
-    fi
-}
-
-# Log following
-cmd_logs() {
-    local follow=false
-    local lines=20
-
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --follow|-f)
-                follow=true
-                shift
-                ;;
-            --lines|-n)
-                lines="$2"
-                shift 2
-                ;;
-            *)
-                lines="$1"
-                shift
-                ;;
-        esac
-    done
-
-    if ! init_selfcontrol_cli; then
-        die "Failed to initialize SelfControl CLI"
-    fi
-
-    echo "📋 SelfControl CLI Logs"
-    echo "======================="
-
-    if [[ ! -f "$SCHEDULE_LOG" ]]; then
-        echo "❌ No log file found: $SCHEDULE_LOG"
-        return 1
-    fi
-
-    if [[ "$follow" == "true" ]]; then
-        echo "🔄 Following log file (Ctrl+C to exit)..."
-        echo "File: $SCHEDULE_LOG"
-        echo ""
-        tail -f "$SCHEDULE_LOG"
-    else
-        echo "📄 Last $lines lines:"
-        echo "File: $SCHEDULE_LOG"
-        echo ""
-        tail -n "$lines" "$SCHEDULE_LOG"
-    fi
-}
-
-# Configuration validation
-cmd_validate() {
-    if ! init_selfcontrol_cli; then
-        die "Failed to initialize SelfControl CLI"
-    fi
-
-    echo "✅ SelfControl CLI Configuration Validation"
-    echo "==========================================="
-    echo ""
-
-    local errors=0
-
-    # Check configuration file
-    echo "📄 Configuration File:"
-    if [[ -f "$SCHEDULE_CONFIG" ]]; then
-        echo "   ✅ File exists: $SCHEDULE_CONFIG"
-
-        # Validate JSON syntax
-        if python3 -m json.tool "$SCHEDULE_CONFIG" >/dev/null 2>&1; then
-            echo "   ✅ JSON syntax is valid"
-
-            # Validate structure
-            local config
-            if config=$(load_schedule_config 2>/dev/null); then
-                echo "   ✅ Configuration structure is valid"
-
-                # Check schedules
-                local schedule_count
-                schedule_count=$(echo "$config" | python3 -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    print(len(data.get('schedules', [])))
-except:
-    print('0')
-" 2>/dev/null)
-                echo "   📋 Schedules found: $schedule_count"
-            else
-                echo "   ❌ Configuration structure is invalid"
-                ((errors++))
-            fi
-        else
-            echo "   ❌ JSON syntax is invalid"
-            ((errors++))
-        fi
-    else
-        echo "   ❌ Configuration file not found"
-        ((errors++))
-    fi
-    echo ""
-
-    # Check blocklist files
-    echo "📋 Blocklist Files:"
-    if [[ -f "$SCHEDULE_CONFIG" ]]; then
-        local blocklists
-        blocklists=$(python3 -c "
-import json
-try:
-    with open('$SCHEDULE_CONFIG') as f:
-        data = json.load(f)
-        for name, filename in data.get('blocklists', {}).items():
-            print(f'{name}:{filename}')
-except:
-    pass
-" 2>/dev/null)
-
-        if [[ -n "$blocklists" ]]; then
-            while IFS=':' read -r name filename; do
-                local blocklist_path="$HOME/.config/selfcontrol-cli/$filename"
-                if [[ -f "$blocklist_path" ]]; then
-                    if plutil -lint "$blocklist_path" >/dev/null 2>&1; then
-                        echo "   ✅ $name: $filename (valid plist)"
-                    else
-                        echo "   ❌ $name: $filename (invalid plist)"
-                        ((errors++))
-                    fi
-                else
-                    echo "   ❌ $name: $filename (file not found)"
-                    ((errors++))
-                fi
-            done <<< "$blocklists"
-        else
-            echo "   ⚠️  No blocklists configured"
-        fi
-    fi
-    echo ""
-
-    # Summary
-    echo "📊 Validation Summary:"
-    if [[ $errors -eq 0 ]]; then
-        echo "   ✅ All checks passed! Configuration is valid."
-        return 0
-    else
-        echo "   ❌ Found $errors error(s). Please fix the issues above."
-        return 1
-    fi
-}
-
-# =============================================================================
 # MAIN DISPATCHER
 # =============================================================================
 
@@ -785,11 +563,7 @@ main() {
             cmd_init
             ;;
         "status"|"st")
-            if [[ "$1" == "--live" ]]; then
-                cmd_status_live
-            else
-                cmd_status
-            fi
+            cmd_status
             ;;
         "info")
             cmd_info
@@ -802,15 +576,6 @@ main() {
             ;;
         "service"|"svc")
             cmd_service "$@"
-            ;;
-        "debug")
-            cmd_debug
-            ;;
-        "logs")
-            cmd_logs "$@"
-            ;;
-        "validate")
-            cmd_validate
             ;;
         "_launchagent_check")
             # Internal command called by LaunchAgent - not documented for users

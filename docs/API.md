@@ -30,6 +30,7 @@ Show current SelfControl and schedule status.
 
 ```bash
 selfcontrol-cli status
+selfcontrol-cli status --live  # NEW v3.1.0: Real-time monitoring
 ```
 
 **Output:**
@@ -52,6 +53,46 @@ $ selfcontrol-cli status
 ⚠️  Schedule 'work_hours' should be active!
 ⏰ Should run until: 17:00 (2h 15m left)
 💡 LaunchAgent will automatically start scheduled blocks
+```
+
+### `selfcontrol-cli status --live` (NEW v3.1.0)
+
+Real-time status monitoring with automatic refresh.
+
+**Usage:**
+
+```bash
+selfcontrol-cli status --live
+```
+
+**Features:**
+
+- **Auto-refresh**: Updates every 5 seconds
+- **Real-time data**: Current status, active schedules, recent LaunchAgent activity
+- **Graceful exit**: Press Ctrl+C to stop monitoring
+- **Clear display**: Screen clears between updates for clean viewing
+- **Comprehensive info**: Shows SelfControl status, schedule info, and recent logs
+
+**Example:**
+
+```
+🔴 Live Status Monitor - SelfControl CLI v3.1.0
+⏰ Refresh: 5s | Press Ctrl+C to exit
+============================================================
+📅 2025-09-21 20:32:23 (Sunday)
+⏰ Refresh: 5s | Press Ctrl+C to exit
+
+📊 Current Status:
+------------------
+✅ SelfControl: INACTIVE
+💡 Ready to start a new block
+
+📋 Recent LaunchAgent Activity (last 5 entries):
+-------------------------------------------------
+   [2025-09-15 18:05:39] [INFO] Updated schedule 'night_block' enabled status to true
+   [2025-09-15 18:05:51] [INFO] No active schedule found
+
+🔄 Next update in 5s...
 ```
 
 ### `selfcontrol-cli info`
@@ -130,7 +171,7 @@ selfcontrol-cli start 0.5      # 30-minute block
 - Blocklist file not found
 - SelfControl.app not installed
 
-## 🤖 Service Management Commands (v3.0.0)
+## 🤖 Service Management Commands (v3.1.0)
 
 ### `selfcontrol-cli service status`
 
@@ -443,6 +484,139 @@ selfcontrol-cli init
 - `~/.config/selfcontrol-cli/schedule.json`
 - `~/.config/selfcontrol-cli/blocklist.selfcontrol`
 
+### `selfcontrol-cli debug` (NEW v3.1.0)
+
+Run comprehensive system diagnostics.
+
+**Usage:**
+
+```bash
+selfcontrol-cli debug
+```
+
+**Output:**
+
+- **System Information**: macOS version, Bash version, user environment
+- **File Paths & Permissions**: Validation of all critical files and directories
+- **SelfControl.app Integration**: Version detection and availability status
+- **LaunchAgent Status**: Service status and configuration validation
+- **Configuration Validation**: JSON syntax and structure verification
+- **Sudo Permissions**: Testing and troubleshooting sudo configuration
+
+**Example:**
+
+```
+🐛 SelfControl CLI Debug Information
+=====================================
+
+🖥️  System Information:
+   macOS Version: 15.6.1
+   Bash Version: 3.2.57(1)-release
+   User: aristeoibarra
+   HOME: /Users/aristeoibarra
+
+📁 File Paths & Permissions:
+   ✅ /Users/aristeoibarra/.config/selfcontrol-cli/schedule.json
+   ✅ /Users/aristeoibarra/.local/share/selfcontrol-cli/logs/schedule.log
+   ✅ /Applications/SelfControl.app/Contents/MacOS/SelfControl-CLI
+
+🔗 SelfControl.app Integration:
+   ✅ SelfControl CLI available
+
+🤖 LaunchAgent Status:
+   ✅ LaunchAgent plist exists
+   ✅ LaunchAgent loaded
+
+⚙️  Configuration Validation:
+   ✅ Configuration JSON is valid
+   📋 Schedules configured: 2
+
+🔐 Sudo Permissions:
+   ✅ Sudoers file exists
+   ❌ Sudo requires password
+```
+
+### `selfcontrol-cli logs [--follow|-f]` (NEW v3.1.0)
+
+Show or follow application logs.
+
+**Usage:**
+
+```bash
+selfcontrol-cli logs [options]
+selfcontrol-cli logs --follow      # Follow logs in real-time
+selfcontrol-cli logs -f            # Short form of --follow
+selfcontrol-cli logs --lines 50    # Show last 50 lines
+selfcontrol-cli logs -n 50         # Short form of --lines
+```
+
+**Options:**
+
+- `--follow` or `-f`: Follow logs in real-time (like `tail -f`)
+- `--lines N` or `-n N`: Show last N lines (default: 20)
+
+**Output:**
+
+- **Log Information**: File path, size, and line count
+- **Formatted Logs**: Timestamped entries with structured display
+- **Real-time Following**: Live log updates when using `--follow`
+- **Error Handling**: Graceful handling of missing or empty log files
+
+**Examples:**
+
+```bash
+# Show last 20 lines (default)
+selfcontrol-cli logs
+
+# Show last 50 lines
+selfcontrol-cli logs --lines 50
+
+# Follow logs in real-time
+selfcontrol-cli logs --follow
+
+# Follow logs with custom line count
+selfcontrol-cli logs -f -n 100
+```
+
+### `selfcontrol-cli validate` (NEW v3.1.0)
+
+Validate configuration files and setup.
+
+**Usage:**
+
+```bash
+selfcontrol-cli validate
+```
+
+**Validation Checks:**
+
+- **Configuration File**: JSON syntax and structure validation
+- **Blocklist Files**: Existence and format verification for all referenced blocklists
+- **Schedule Structure**: Validation of schedule properties and time formats
+- **File Permissions**: Check read/write access to configuration files
+- **Error Summary**: Count and categorization of all found issues
+
+**Output:**
+
+```
+✅ SelfControl CLI Configuration Validation
+===========================================
+
+📄 Configuration File:
+   ✅ File exists: /Users/user/.config/selfcontrol-cli/schedule.json
+   ✅ JSON syntax is valid
+   ✅ Configuration structure is valid
+   📋 Schedules found: 2
+
+📋 Blocklist Files:
+   ✅ default: blocklist.selfcontrol (valid plist)
+   ❌ work: blocklist.work.selfcontrol (file not found)
+   ❌ minimal: blocklist.minimal.selfcontrol (file not found)
+
+📊 Validation Summary:
+   ❌ Found 2 error(s). Please fix the issues above.
+```
+
 ### `selfcontrol-cli help`
 
 Show comprehensive help information.
@@ -566,9 +740,22 @@ selfcontrol-cli help
 
 ### Debug Mode
 
-Enable detailed logging:
+Use the new diagnostic and validation tools (v3.1.0):
 
 ```bash
+# Comprehensive system diagnostics
+selfcontrol-cli debug
+
+# Configuration validation
+selfcontrol-cli validate
+
+# Real-time monitoring
+selfcontrol-cli status --live
+
+# Follow logs in real-time
+selfcontrol-cli logs --follow
+
+# Legacy debug mode
 export SELFCONTROL_CLI_DEBUG=1
 selfcontrol-cli schedule test
 ```
@@ -615,14 +802,23 @@ selfcontrol-cli init
 # 2. Configure schedules
 # Edit ~/.config/selfcontrol-cli/schedule.json
 
-# 3. Test configuration
+# 3. Validate configuration (NEW v3.1.0)
+selfcontrol-cli validate
+
+# 4. Test configuration
 selfcontrol-cli schedule test
 
-# 4. Check LaunchAgent status
+# 5. Check system diagnostics (NEW v3.1.0)
+selfcontrol-cli debug
+
+# 6. Check LaunchAgent status
 selfcontrol-cli service status
 
-# 5. Monitor status
+# 7. Monitor status
 selfcontrol-cli status
+
+# 8. Real-time monitoring (NEW v3.1.0)
+selfcontrol-cli status --live
 ```
 
 ### Manual Blocking
@@ -650,8 +846,33 @@ selfcontrol-cli schedule enable work_hours
 # Test schedule logic
 selfcontrol-cli schedule test
 
+# Validate configuration (NEW v3.1.0)
+selfcontrol-cli validate
+
+# Monitor in real-time (NEW v3.1.0)
+selfcontrol-cli status --live
+
 # Disable for vacation
 selfcontrol-cli schedule disable work_hours
+```
+
+### Troubleshooting Workflow (NEW v3.1.0)
+
+```bash
+# 1. Run comprehensive diagnostics
+selfcontrol-cli debug
+
+# 2. Validate all configuration
+selfcontrol-cli validate
+
+# 3. Check service status
+selfcontrol-cli service status
+
+# 4. Monitor system in real-time
+selfcontrol-cli status --live
+
+# 5. Follow logs for detailed information
+selfcontrol-cli logs --follow
 ```
 
 ---

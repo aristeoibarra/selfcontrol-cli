@@ -5,6 +5,94 @@ All notable changes to SelfControl CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-09-21
+
+### 🎯 Major Release: Enhanced User Experience & Diagnostics
+
+#### ✨ New Features
+
+##### **Real-time Monitoring & Diagnostics**
+
+- **`selfcontrol-cli status --live`**: Live status monitoring with automatic refresh every 5 seconds
+  - Clear screen updates with real-time status display
+  - Graceful exit with Ctrl+C signal handling
+  - Shows current SelfControl status, active schedules, and recent LaunchAgent activity
+  - Automatic detection of schedule changes and block transitions
+
+- **`selfcontrol-cli debug`**: Comprehensive system diagnostics command
+  - Complete system information (macOS version, Bash version, user environment)
+  - File paths and permissions validation
+  - SelfControl.app integration status and version detection
+  - LaunchAgent status and configuration validation
+  - Configuration JSON validation with detailed error reporting
+  - Sudo permissions testing and troubleshooting
+  - Professional diagnostic output with clear status indicators
+
+- **`selfcontrol-cli logs [--follow|-f]`**: Enhanced log management
+  - View application logs with configurable line limits (`--lines N`)
+  - Follow logs in real-time with `--follow` or `-f` option
+  - Intelligent log file detection and validation
+  - Professional log display with file information and timestamps
+  - Supports both LaunchAgent and application logs
+
+- **`selfcontrol-cli validate`**: Configuration validation system
+  - Complete configuration file syntax validation
+  - Blocklist file existence and format verification
+  - Schedule configuration structure validation
+  - Comprehensive error reporting with specific issue identification
+  - Summary reporting with error counts and actionable feedback
+
+#### 🔧 Technical Improvements
+
+##### **Enhanced Command Interface**
+
+- **Updated Help System**: All new commands integrated into help documentation with clear descriptions
+- **Improved Command Routing**: Enhanced main dispatcher with support for command options and flags
+- **Consistent Error Handling**: Standardized error messages and exit codes across all new commands
+- **Professional Output Formatting**: Consistent use of emojis, colors, and structured output across all commands
+
+##### **Code Quality & Architecture**
+
+- **Modular Function Design**: All new commands implemented as separate, testable functions
+- **Signal Handling**: Proper trap handling for graceful interruption in live monitoring
+- **Input Validation**: Comprehensive validation for all command options and parameters
+- **Error Recovery**: Intelligent error handling with helpful troubleshooting suggestions
+
+#### 🎨 User Experience Improvements
+
+##### **Better Troubleshooting Workflow**
+
+- **Diagnostic-First Approach**: Users can now quickly identify issues with `selfcontrol-cli debug`
+- **Real-time Monitoring**: Immediate visibility into system behavior with live status updates
+- **Configuration Validation**: Proactive configuration checking prevents runtime issues
+- **Enhanced Log Access**: Easy log viewing and following for better problem diagnosis
+
+##### **Professional CLI Experience**
+
+- **Consistent Visual Design**: Unified emoji usage and output formatting
+- **Clear Status Indicators**: ✅ ❌ ⚠️ symbols for immediate status recognition
+- **Structured Information Display**: Organized sections with clear headers and separators
+- **Responsive Interface**: Live updates and real-time feedback
+
+#### 🔄 Version Management
+
+- **Version Update**: Bumped from v3.0.0 to v3.1.0 across all components
+- **Backwards Compatibility**: All existing commands and functionality preserved
+- **Non-Breaking Changes**: New features are additive and don't affect existing workflows
+
+#### 📚 Documentation Updates
+
+- **README.md**: Updated with all new v3.1.0 features and commands
+- **Command Examples**: New examples showcasing diagnostic and monitoring capabilities
+- **Troubleshooting Section**: Enhanced with new diagnostic tools references
+- **Use Cases**: Added real-time monitoring and debugging use cases
+
+#### 🐛 Bug Fixes
+
+- **Command Option Parsing**: Improved parsing of command-line options for status command
+- **Help Text Consistency**: Standardized help text formatting and command descriptions
+- **Error Message Clarity**: Enhanced error messages with more descriptive information
+
 ## [2.1.1] - 2025-09-21
 
 ### 🗑️ Cron Support Removal

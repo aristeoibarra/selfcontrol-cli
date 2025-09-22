@@ -24,13 +24,17 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 - 🔐 **Passwordless sudo integration** for seamless automation
 - 🚀 **100% automated operation** - no manual intervention required
 
-### 🆕 Service Management (v3.0.0)
+### 🆕 Service Management (v3.1.0)
 
 - 🤖 **LaunchAgent integration** - Native macOS automation
 - 🔄 **Automatic migration** from legacy systems during updates
 - 📊 **Service management commands** - start, stop, restart, status, logs
 - 🛠️ **Advanced diagnostics** - comprehensive system health checks
 - 🔧 **Easy troubleshooting** - clear status reporting and log access
+- 🔴 **Live monitoring** - Real-time status updates with automatic refresh
+- 🐛 **Debug mode** - Comprehensive system diagnostics and validation
+- 📋 **Log following** - Tail logs with filtering and follow options
+- ✅ **Configuration validation** - Automated checking of all configuration files
 
 ### 🔧 Production-Ready Features
 
@@ -68,6 +72,7 @@ The installer will:
 ### 📊 Status & Information
 
 - `selfcontrol-cli status` - Quick status with schedule info
+- `selfcontrol-cli status --live` - **NEW v3.1.0** Real-time status monitoring with auto-refresh
 - `selfcontrol-cli info` - Detailed block information
 - `selfcontrol-cli version` - Version and system information
 
@@ -86,7 +91,7 @@ The installer will:
 - `selfcontrol-cli schedule test` - Test schedule logic in real-time
   (legacy)
 
-### 🤖 Service Management (v3.0.0)
+### 🤖 Service Management (v3.1.0)
 
 - `selfcontrol-cli service status` - Show LaunchAgent service status and diagnostics
 - `selfcontrol-cli service start` - Start LaunchAgent service
@@ -98,6 +103,9 @@ The installer will:
 ### 🔧 Utility Commands
 
 - `selfcontrol-cli init` - Initialize configuration and directories
+- `selfcontrol-cli debug` - **NEW v3.1.0** Run comprehensive system diagnostics
+- `selfcontrol-cli logs [--follow|-f]` - **NEW v3.1.0** Show or follow application logs
+- `selfcontrol-cli validate` - **NEW v3.1.0** Validate configuration files and setup
 
 ## ⚙️ Configuration
 
@@ -287,6 +295,25 @@ selfcontrol-cli start 4
 selfcontrol-cli start 0.5
 ```
 
+### 5. Real-time Monitoring & Debugging (v3.1.0)
+
+```bash
+# Live status monitoring (press Ctrl+C to exit)
+selfcontrol-cli status --live
+
+# Comprehensive system diagnostics
+selfcontrol-cli debug
+
+# Validate all configuration files
+selfcontrol-cli validate
+
+# Follow logs in real-time
+selfcontrol-cli logs --follow
+
+# Show last 50 log entries
+selfcontrol-cli logs --lines 50
+```
+
 ### 4. Schedule Management
 
 ```bash
@@ -361,32 +388,37 @@ selfcontrol-cli init
 **❌ "Schedules not working"**
 
 ```bash
-# Solution: Setup automated scheduling
-selfcontrol-cli service status
+# Solution: Use new diagnostic tools (v3.1.0)
+selfcontrol-cli debug          # Comprehensive system check
+selfcontrol-cli validate       # Validate configuration
+selfcontrol-cli status --live  # Monitor in real-time
 
-# Test schedule logic
+# Legacy diagnostics
+selfcontrol-cli service status
 selfcontrol-cli schedule test
-
-# Check service status
-selfcontrol-cli service status
-
-# Check LaunchAgent logs
 selfcontrol-cli service logs
 ```
 
 ### Debug Mode
 
-Enable detailed logging for troubleshooting:
+Use the new debug and validation tools (v3.1.0):
 
 ```bash
-# Enable debug mode
+# Run comprehensive diagnostics
+selfcontrol-cli debug
+
+# Validate entire configuration
+selfcontrol-cli validate
+
+# Monitor system in real-time
+selfcontrol-cli status --live
+
+# Follow logs with built-in filtering
+selfcontrol-cli logs --follow
+
+# Legacy debug mode
 export SELFCONTROL_CLI_DEBUG=1
-
-# Run commands with verbose output
 selfcontrol-cli schedule test
-
-# Check logs
-tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
 ```
 
 For comprehensive troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).

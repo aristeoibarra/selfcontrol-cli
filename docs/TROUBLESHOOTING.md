@@ -2,26 +2,30 @@
 
 Common issues and solutions for SelfControl CLI.
 
-## 🚨 Quick Fixes
+## 🚨 Quick Fixes (Updated for v3.1.0)
 
 ### Automation Not Working
 
 **Problem:** Schedules are not executing automatically
 
-**Diagnosis:**
+**Diagnosis (NEW v3.1.0 - Enhanced Tools):**
 
 ```bash
-# Check LaunchAgent status
+# 1. Run comprehensive diagnostics (NEW v3.1.0)
+selfcontrol-cli debug
+
+# 2. Validate all configuration (NEW v3.1.0)
+selfcontrol-cli validate
+
+# 3. Monitor system in real-time (NEW v3.1.0)
+selfcontrol-cli status --live
+
+# 4. Follow logs for detailed information (NEW v3.1.0)
+selfcontrol-cli logs --follow
+
+# Legacy diagnostic tools
 selfcontrol-cli service status
-
-# Check if sudo configuration exists
-ls -la /etc/sudoers.d/selfcontrol-cli
-
-# Test schedule detection
 selfcontrol-cli schedule test
-
-# Check logs
-tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
 ```
 
 **Solutions:**
@@ -94,11 +98,17 @@ brew install --cask selfcontrol
 
 **Error:** `No configuration found`
 
-**Solution:**
+**Solution (Enhanced v3.1.0):**
 
 ```bash
 # Initialize configuration
 selfcontrol-cli init
+
+# Validate configuration after setup (NEW v3.1.0)
+selfcontrol-cli validate
+
+# Run diagnostics to verify everything (NEW v3.1.0)
+selfcontrol-cli debug
 ```
 
 ## 🔧 Installation Issues
@@ -337,6 +347,93 @@ top -l 1
 ls -lh ~/.local/share/selfcontrol-cli/logs/schedule.log
 ```
 
+## 🆕 New Diagnostic Tools (v3.1.0)
+
+### Enhanced Troubleshooting Workflow
+
+SelfControl CLI v3.1.0 introduces powerful new diagnostic tools that make troubleshooting much easier:
+
+#### 1. Comprehensive System Diagnostics
+
+```bash
+# Run full system diagnosis (NEW v3.1.0)
+selfcontrol-cli debug
+```
+
+**What it checks:**
+- System information (macOS version, Bash version, user environment)
+- File paths and permissions for all critical files
+- SelfControl.app integration and version detection
+- LaunchAgent status and configuration validation
+- Configuration JSON syntax and structure
+- Sudo permissions testing
+
+#### 2. Configuration Validation
+
+```bash
+# Validate all configuration files (NEW v3.1.0)
+selfcontrol-cli validate
+```
+
+**What it validates:**
+- JSON syntax in schedule.json
+- All referenced blocklist files exist and are valid
+- Schedule configuration structure and time formats
+- File permissions and accessibility
+
+#### 3. Real-time Status Monitoring
+
+```bash
+# Monitor system in real-time (NEW v3.1.0)
+selfcontrol-cli status --live
+```
+
+**Features:**
+- Auto-refresh every 5 seconds
+- Real-time SelfControl status updates
+- Active schedule information
+- Recent LaunchAgent activity
+- Graceful exit with Ctrl+C
+
+#### 4. Enhanced Log Management
+
+```bash
+# Follow logs in real-time (NEW v3.1.0)
+selfcontrol-cli logs --follow
+
+# Show specific number of log lines (NEW v3.1.0)
+selfcontrol-cli logs --lines 50
+```
+
+**Capabilities:**
+- Real-time log following like `tail -f`
+- Configurable line limits
+- Professional log formatting
+- Intelligent file detection
+
+### Recommended Troubleshooting Steps (v3.1.0)
+
+When experiencing issues, follow this enhanced workflow:
+
+```bash
+# 1. Quick diagnostics overview
+selfcontrol-cli debug
+
+# 2. Validate configuration
+selfcontrol-cli validate
+
+# 3. Check service status
+selfcontrol-cli service status
+
+# 4. Monitor in real-time
+selfcontrol-cli status --live
+
+# 5. Follow logs for detailed information
+selfcontrol-cli logs --follow
+```
+
+This new approach provides comprehensive system analysis and real-time monitoring capabilities that make identifying and resolving issues much more efficient.
+
 ## 🛠️ Recovery Procedures
 
 ### Reset Configuration
@@ -348,7 +445,11 @@ cp ~/.config/selfcontrol-cli/schedule.json ~/.config/selfcontrol-cli/schedule.js
 # Reset to defaults
 selfcontrol-cli init
 
-# Restore specific settings if needed
+# Validate new configuration (NEW v3.1.0)
+selfcontrol-cli validate
+
+# Run diagnostics to verify (NEW v3.1.0)
+selfcontrol-cli debug
 ```
 
 ### Reinstall
