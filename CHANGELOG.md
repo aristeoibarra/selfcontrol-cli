@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🤖 Major Feature: Complete LaunchAgent Migration
 
+#### 🐛 Critical Fixes (2025-09-21 Post-Release)
+
+- **Fixed LaunchAgent Template**: Corrected ProgramArguments to use `_launchagent_check` directly instead of `schedule _launchagent_check`
+- **Fixed "command not found" Error**: LaunchAgent now executes the correct internal automation command
+- **Enhanced Template Validation**: Improved template processing and validation in installation scripts
+
 #### ✨ New Features
 
 ##### **LaunchAgent-Only Automation**

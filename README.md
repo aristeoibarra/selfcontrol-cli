@@ -216,8 +216,9 @@ Once installed and configured, SelfControl CLI operates **100% automatically** u
 # 1. Install with LaunchAgent automation (v2.1.0+)
 ./scripts/install-production.sh
 
-# 2. LaunchAgent handles automation automatically
-# No manual sudo configuration needed
+# 2. Configure passwordless sudo (one-time setup)
+sudo visudo
+# Add: $(whoami) ALL=(ALL) NOPASSWD: $(which selfcontrol-cli)
 
 # 3. Verify LaunchAgent is running
 selfcontrol-cli service status
