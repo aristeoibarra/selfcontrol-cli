@@ -225,8 +225,8 @@ Once installed and configured, SelfControl CLI operates **100% automatically** u
 ./scripts/install-production.sh
 
 # 2. Configure passwordless sudo (one-time setup)
-sudo visudo
-# Add: $(whoami) ALL=(ALL) NOPASSWD: $(which selfcontrol-cli)
+./scripts/setup-sudo.sh    # Automated setup (NEW v3.1.0)
+# OR manually: see docs/SUDO_SETUP.md
 
 # 3. Verify LaunchAgent is running
 selfcontrol-cli service status
@@ -427,6 +427,7 @@ For comprehensive troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING
 
 - **[API Reference](docs/API.md)** - Complete command documentation
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Sudo Setup Guide](docs/SUDO_SETUP.md)** - **NEW v3.1.0** Complete sudo configuration guide
 - **[Contributing](CONTRIBUTING.md)** - Development and contribution guidelines
 - **[Changelog](CHANGELOG.md)** - Version history and changes
 
