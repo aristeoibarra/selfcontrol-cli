@@ -200,11 +200,10 @@ setup_automation() {
         return 1
     fi
 
-    mkdir -p "$LIB_DIR/../templates"
-    cp "templates/com.selfcontrol.cli.plist.template" "$LIB_DIR/../templates/"
-    print_success "Installed LaunchAgent template"
-
-    # Check for existing cron job and migrate
+    # Create templates directory in the ROOT_DIR location that launchagent.sh expects
+    mkdir -p "$HOME/.local/templates"
+    cp "templates/com.selfcontrol.cli.plist.template" "$HOME/.local/templates/"
+    print_success "Installed LaunchAgent template"    # Check for existing cron job and migrate
     if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
         print_status "Migrating existing cron job to LaunchAgent..."
 
@@ -216,6 +215,7 @@ setup_automation() {
 
             # Source required functions
             export ROOT_DIR="$HOME/.local"
+            export RED GREEN YELLOW BLUE BOLD NC  # Export color variables for launchagent.sh
             # shellcheck source=scripts/launchagent.sh
             source "$LIB_DIR/launchagent.sh"
 
@@ -235,13 +235,15 @@ setup_automation() {
 
         # Source required functions for LaunchAgent installation
         export ROOT_DIR="$HOME/.local"
+        export RED GREEN YELLOW BLUE BOLD NC  # Export color variables for launchagent.sh
         # shellcheck source=scripts/launchagent.sh
         source "$LIB_DIR/launchagent.sh"
 
         if install_launchagent 5; then
             print_success "LaunchAgent installed and running"
         else
-            print_error "LaunchAgent installation failed"
+            print_error "LaunchAgent installation failed - automation will not work"
+            print_info "You can try manual installation later with: selfcontrol-cli service migrate"
             return 1
         fi
     fi

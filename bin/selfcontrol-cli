@@ -451,6 +451,10 @@ except:
         "test")
             test_schedule_logic
             ;;
+        "_launchagent_check")
+            # Internal command called by LaunchAgent - not documented for users
+            check_and_execute_schedules
+            ;;
         *)
             echo "❌ Unknown schedule command: $subcommand"
             echo "Available commands: list, status, enable, disable, reload, test"

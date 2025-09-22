@@ -11,7 +11,7 @@
         <string>-n</string>
         <string>{{USER_HOME}}/.local/bin/selfcontrol-cli</string>
         <string>schedule</string>
-        <string>check</string>
+        <string>_launchagent_check</string>
     </array>
 
     <!-- TIMING: Run every N minutes -->
