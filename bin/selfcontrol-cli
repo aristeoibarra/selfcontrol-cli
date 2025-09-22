@@ -785,7 +785,7 @@ main() {
             cmd_init
             ;;
         "status"|"st")
-            if [[ "$1" == "--live" ]]; then
+            if [[ "${1:-}" == "--live" ]]; then
                 cmd_status_live
             else
                 cmd_status
@@ -795,7 +795,7 @@ main() {
             cmd_info
             ;;
         "start")
-            cmd_start "$1"
+            cmd_start "${1:-}"
             ;;
         "schedule"|"sched")
             cmd_schedule "$@"

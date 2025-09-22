@@ -247,6 +247,7 @@ get_selfcontrol_settings() {
 validate_and_convert_blocklist() {
     local input_file="$1"
     local output_file="$2"
+    local duration_minutes="${3:-60}"
 
     # Try to read the input file
     if ! plutil -lint "$input_file" >/dev/null 2>&1; then
@@ -254,43 +255,59 @@ validate_and_convert_blocklist() {
         return 1
     fi
 
-    # Extract array contents and create a proper blocklist
-    local sites_array
-    sites_array=$(plutil -extract 0 raw -o - "$input_file" 2>/dev/null) || sites_array=$(plutil -p "$input_file" 2>/dev/null | grep '=>' | sed 's/.*=> "\(.*\)"/\1/')
+    # Read the domains from the input file
+    local domains
+    domains=$(plutil -extract 0 raw "$input_file" 2>/dev/null || plutil -p "$input_file" | grep '=>' | sed 's/.*=> "\(.*\)"/\1/')
 
-    if [[ -z "$sites_array" ]]; then
-        log_error "No sites found in blocklist: $input_file"
-        return 1
-    fi
-
-    # Create a clean blocklist file with proper formatting
-    cat > "$output_file" << 'EOF'
+    # Create a proper SelfControl block format
+    cat > "$output_file" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<array>
+<dict>
+    <key>BlockDuration</key>
+    <integer>$duration_minutes</integer>
+    <key>HostBlacklist</key>
+    <array>
 EOF
 
-    # Add each site to the array
-    while IFS= read -r site; do
-        if [[ -n "$site" ]]; then
-            # Clean the site name (remove quotes and extra spaces)
-            site=$(echo "$site" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
-            echo "    <string>$site</string>" >> "$output_file"
+    # Add all domains from the original file
+    if [[ -n "$domains" ]]; then
+        # If we got a single domain from plutil -extract
+        if [[ "$domains" != *$'\n'* ]]; then
+            echo "        <string>$domains</string>" >> "$output_file"
+        else
+            # Multiple domains
+            echo "$domains" | while read -r domain; do
+                if [[ -n "$domain" ]]; then
+                    echo "        <string>$domain</string>" >> "$output_file"
+                fi
+            done
         fi
-    done <<< "$sites_array"
+    else
+        # Fallback: parse the plist manually
+        plutil -p "$input_file" | grep '=>' | sed 's/.*=> "\(.*\)"/\1/' | while read -r domain; do
+            if [[ -n "$domain" ]]; then
+                echo "        <string>$domain</string>" >> "$output_file"
+            fi
+        done
+    fi
 
-    cat >> "$output_file" << 'EOF'
-</array>
+    cat >> "$output_file" << EOF
+    </array>
+    <key>WhitelistEnabled</key>
+    <false/>
+    <key>BlockAsWhitelist</key>
+    <false/>
+</dict>
 </plist>
 EOF
 
-    # Set proper permissions
     chmod 644 "$output_file"
 
-    # Validate the generated file
+    # Final validation of created file
     if ! plutil -lint "$output_file" >/dev/null 2>&1; then
-        log_error "Generated invalid blocklist format"
+        log_error "Failed to create valid blocklist file"
         rm -f "$output_file"
         return 1
     fi
@@ -307,7 +324,15 @@ read_blocklist_sites() {
         return 1
     fi
 
-    plutil -p "$blocklist_file" 2>/dev/null | grep '=>' | sed 's/.*=> "\(.*\)"/\1/' | tr '\n' ' ' | sed 's/ $//'
+    # Check if this is the new format (has HostBlacklist key)
+    if plutil -p "$blocklist_file" 2>/dev/null | grep -q "HostBlacklist"; then
+        # Extract domains from HostBlacklist array in new format
+        # Look for numbered array entries and extract the quoted strings
+        plutil -p "$blocklist_file" 2>/dev/null | sed -n '/HostBlacklist/,/\]/p' | grep -E '[0-9]+ =>' | sed 's/.*=> "\(.*\)"/\1/' | tr '\n' ' ' | sed 's/ $//'
+    else
+        # Fallback to old format (simple array)
+        plutil -p "$blocklist_file" 2>/dev/null | grep '=>' | sed 's/.*=> "\(.*\)"/\1/' | tr '\n' ' ' | sed 's/ $//'
+    fi
 }
 
 # Start SelfControl block
@@ -325,21 +350,23 @@ start_selfcontrol_block() {
         die "Blocklist file not found: $blocklist_file"
     fi
 
-    # Create a temporary blocklist in the format SelfControl CLI expects
-    local temp_blocklist="/tmp/selfcontrol-temp-blocklist-$$.selfcontrol"
-
-    # Validate and convert blocklist format
-    if ! validate_and_convert_blocklist "$blocklist_file" "$temp_blocklist"; then
-        die "Failed to process blocklist: $blocklist_file"
-    fi
-
-    # Calculate end time in ISO8601 format
-    local end_date
+    # Calculate duration in minutes first
     local int_minutes
     int_minutes=$(echo "$minutes" | awk '{print int($1)}')
     if [[ $int_minutes -eq 0 ]]; then
         int_minutes=1  # Minimum 1 minute
     fi
+
+    # Create a temporary blocklist in the format SelfControl CLI expects
+    local temp_blocklist="/tmp/selfcontrol-temp-blocklist-$$.selfcontrol"
+
+    # Validate and convert blocklist format
+    if ! validate_and_convert_blocklist "$blocklist_file" "$temp_blocklist" "$int_minutes"; then
+        die "Failed to process blocklist: $blocklist_file"
+    fi
+
+    # Calculate end time in ISO8601 format
+    local end_date
 
     if command -v gdate >/dev/null 2>&1; then
         end_date=$(gdate -d "+${int_minutes} minutes" -Iseconds)
@@ -363,7 +390,7 @@ start_selfcontrol_block() {
 
     # Try to start the block with proper error handling
     local result=0
-    if sudo "$selfcontrol_cli" start --blocklist "$temp_blocklist" --enddate "$end_date"; then
+    if sudo "$selfcontrol_cli" --uid "$(id -u)" start --blocklist "$temp_blocklist" --enddate "$end_date"; then
         echo "✅ Block started successfully!"
         echo "🚫 Sites are now blocked for $int_minutes minutes"
         result=0
