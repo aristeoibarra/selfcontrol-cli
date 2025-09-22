@@ -2,7 +2,7 @@
 
 # SelfControl CLI - Main Executable
 # Production-ready command-line interface for SelfControl.app
-# Version: 2.1.0
+# Version: 3.0.0
 
 set -euo pipefail
 
@@ -83,15 +83,12 @@ COMMANDS:
     service stop        Stop (unload) LaunchAgent service
     service restart     Restart LaunchAgent service
     service logs [n]    Show LaunchAgent logs (default: 20 lines)
-    service migrate     Migrate from cron to LaunchAgent
-
-🤖 Service Management (v2.1.0):
+🤖 Service Management (v3.0.0):
     service status      Show LaunchAgent service status
     service start       Start LaunchAgent service
     service stop        Stop LaunchAgent service
     service restart     Restart LaunchAgent service
     service logs        Show LaunchAgent logs
-    service migrate     Migrate from cron to LaunchAgent
 
 🔧 Utility:
     init                Initialize configuration and directories
@@ -102,8 +99,6 @@ EXAMPLES:
     selfcontrol-cli schedule enable work_hours
     selfcontrol-cli schedule test       # Test schedule logic
     selfcontrol-cli service status      # Check LaunchAgent status
-    selfcontrol-cli service migrate     # Migrate from cron to LaunchAgent
-
 For more information, visit:
 https://github.com/aristeoibarra/selfcontrol-cli
 EOF

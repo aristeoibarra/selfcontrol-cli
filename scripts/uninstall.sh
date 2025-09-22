@@ -76,9 +76,7 @@ check_installation() {
         fi
     done
 
-    # Check cron jobs
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli"; then
-        print_status "Found cron jobs"
+
         found=true
     fi
 
@@ -140,20 +138,7 @@ remove_from_path() {
     fi
 }
 
-remove_cron_jobs() {
-    print_header "⏰ Removing Cron Jobs"
 
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli"; then
-        # Create backup of current crontab
-        crontab -l > "$HOME/crontab.backup.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
-
-        # Remove selfcontrol-cli entries
-        crontab -l 2>/dev/null | grep -v "selfcontrol-cli" | crontab -
-        print_success "Removed cron jobs"
-    else
-        print_status "No cron jobs found"
-    fi
-}
 
 remove_configuration() {
     print_header "⚙️  Removing Configuration"
@@ -206,11 +191,9 @@ show_completion_info() {
     echo "  ✅ Configuration files"
     echo "  ✅ Data files"
     echo "  ✅ PATH entries"
-    echo "  ✅ Cron jobs"
     echo ""
     echo "Backup files created:"
     echo "  📁 Shell profile backups: ~/.zshrc.backup.*, ~/.bashrc.backup.*"
-    echo "  📁 Crontab backup: ~/crontab.backup.*"
     echo ""
     echo "To reinstall, run: ./scripts/install-production.sh"
     echo ""
@@ -235,7 +218,7 @@ confirm_uninstall() {
     echo "  • Configuration: $CONFIG_DIR/"
     echo "  • Data files: $DATA_DIR/"
     echo "  • PATH entries from shell profiles"
-    echo "  • Cron jobs"
+
     echo ""
     echo "Backup files will be created before removal."
     echo ""
@@ -272,7 +255,6 @@ uninstall() {
     remove_executable
     remove_libraries
     remove_from_path
-    remove_cron_jobs
     remove_configuration
     cleanup_empty_directories
 

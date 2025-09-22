@@ -5,7 +5,31 @@ All notable changes to SelfControl CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0] - 2025-09-21
+## [2.1.1] - 2025-09-21
+
+### 🗑️ Cron Support Removal
+
+#### ✨ Changes
+
+- **Removed Cron Job Support**: Eliminated all cron-related functionality and migration tools
+- **Removed `service migrate` Command**: No longer needed as cron support has been discontinued
+- **Simplified Codebase**: Removed cron detection, migration, and cleanup functions
+- **Updated Documentation**: Removed all cron-related references from API documentation
+- **Streamlined Installation**: Installer no longer checks for or migrates existing cron jobs
+- **Cleaner Uninstall**: Uninstaller no longer searches for or removes cron jobs
+
+#### 🔧 Technical Changes
+
+- Removed `detect_existing_cron()`, `get_cron_config()`, `remove_cron_job()`, and `migrate_from_cron()` functions
+- Removed cron migration logic from installation and uninstall scripts
+- Updated help text to remove migration command references
+- Simplified LaunchAgent status display (removed migration status section)
+
+#### 📝 Note
+
+SelfControl CLI now exclusively uses LaunchAgent for automation. Users still using cron-based setups should manually remove their cron jobs before updating.
+
+## [3.0.0] - 2025-09-21
 
 ### 🤖 Major Feature: Complete LaunchAgent Migration
 
@@ -17,12 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### ✨ New Features
 
-##### **LaunchAgent-Only Automation**
+##### **LaunchAgent Automation**
 
-- **Native macOS Integration**: Completely replaced cron-based scheduling with LaunchAgent
-- **Automatic Migration**: Seamless migration from existing cron jobs to LaunchAgent during installation/updates
+- **Native macOS Integration**: Uses LaunchAgent for scheduled automation
 - **Enhanced Persistence**: Better system restart/sleep/wake behavior with native macOS integration
-- **Improved Reliability**: More robust error recovery and restart capabilities without cron dependencies
+- **Improved Reliability**: Robust error recovery and restart capabilities
 
 ##### **Service Management Commands**
 
@@ -31,45 +54,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`selfcontrol-cli service stop`**: Stop (unload) LaunchAgent service
 - **`selfcontrol-cli service restart`**: Restart LaunchAgent service
 - **`selfcontrol-cli service logs`**: Display LaunchAgent logs with configurable line count
-- **`selfcontrol-cli service migrate`**: Manual migration from cron to LaunchAgent
 
 ##### **Enhanced Diagnostics**
 
 - **System Health Checks**: Comprehensive validation of sudo permissions, SelfControl.app availability, and configuration
-- **Migration Status**: Clear indication of cron vs LaunchAgent usage
+
 - **Log Management**: Better log file handling and display with size/line information
 - **Service Monitoring**: Real-time LaunchAgent status and health monitoring
 
 #### 🔧 Improvements
 
-- **LaunchAgent-Only Installer**: Production installer now requires LaunchAgent (no cron fallback)
-- **Automatic Detection**: Installer detects and migrates existing cron configurations
+- **LaunchAgent Installer**: Production installer sets up LaunchAgent automation
 - **Simplified Documentation**: Updated README and API documentation to focus on LaunchAgent
 - **Enhanced Error Messages**: More helpful error messages for LaunchAgent issues
-- **Eliminated Dependencies**: Removed all cron dependencies for better macOS integration
 
 #### 📁 New Files
 
 - `templates/com.selfcontrol.cli.plist.template`: LaunchAgent plist template
 - `scripts/launchagent.sh`: LaunchAgent management functions
-- `scripts/migrate.sh`: Migration utility script
 
 #### 🗑️ Removed Features
 
-##### **Complete Cron Elimination**
+##### **Streamlined Commands**
 
 - **Removed `schedule setup` command**: No longer needed with automatic LaunchAgent installation
 - **Removed `schedule check` command**: Internal automation now handled by LaunchAgent
-- **Removed cron fallback**: Installation fails if LaunchAgent components are missing
-- **Removed cron documentation**: All documentation now focuses on LaunchAgent
 - **Simplified workflow**: No manual automation setup required
-
-#### 🔄 Migration Notes
-
-- Existing cron installations will be automatically migrated to LaunchAgent during updates
-- Manual migration available via `selfcontrol-cli service migrate`
-- Cron configuration is backed up before removal
-- No rollback to cron available - LaunchAgent is now the only supported automation method
 
 ## [2.0.0] - 2025-09-15
 

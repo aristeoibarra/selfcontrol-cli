@@ -16,7 +16,7 @@ readonly SELFCONTROL_CORE_LOADED=1
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-readonly SELFCONTROL_CLI_VERSION="2.1.0"
+readonly SELFCONTROL_CLI_VERSION="3.0.0"
 readonly SELFCONTROL_APP_PATH="/Applications/SelfControl.app"
 readonly SELFCONTROL_CLI_PATH="$SELFCONTROL_APP_PATH/Contents/MacOS/SelfControl-CLI"
 

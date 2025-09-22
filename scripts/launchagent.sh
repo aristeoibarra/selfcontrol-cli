@@ -2,7 +2,7 @@
 
 # SelfControl CLI - LaunchAgent Management
 # Handles LaunchAgent installation, migration, and management
-# Version: 2.1.0
+# Version: 3.0.0
 
 set -euo pipefail
 
@@ -82,68 +82,6 @@ get_launchagent_info() {
         launchctl list "$LAUNCHAGENT_LABEL"
     else
         echo "LaunchAgent not loaded"
-    fi
-}
-
-# =============================================================================
-# CRON DETECTION AND MIGRATION FUNCTIONS
-# =============================================================================
-
-# Detect existing cron job
-detect_existing_cron() {
-    local cron_output
-    if cron_output=$(crontab -l 2>/dev/null); then
-        if echo "$cron_output" | grep -q "selfcontrol-cli schedule check"; then
-            return 0
-        fi
-    fi
-    return 1
-}
-
-# Get existing cron configuration
-get_cron_config() {
-    local cron_output
-    if cron_output=$(crontab -l 2>/dev/null); then
-        local cron_line
-        cron_line=$(echo "$cron_output" | grep "selfcontrol-cli schedule check" | head -1)
-
-        if [[ -n "$cron_line" ]]; then
-            # Extract interval from cron expression (e.g., "*/5 * * * *" -> 5)
-            local cron_interval
-            cron_interval=$(echo "$cron_line" | awk '{print $1}' | sed 's|*/||' | sed 's|*|1|')
-            echo "$cron_interval"
-        else
-            echo "$DEFAULT_INTERVAL_MINUTES"
-        fi
-    else
-        echo "$DEFAULT_INTERVAL_MINUTES"
-    fi
-}
-
-# Remove existing cron job
-remove_cron_job() {
-    if detect_existing_cron; then
-        print_launchagent_info "Removing existing cron job..."
-
-        # Get current crontab without selfcontrol-cli entries
-        local new_crontab
-        if new_crontab=$(crontab -l 2>/dev/null | grep -v "selfcontrol-cli"); then
-            if [[ -n "$new_crontab" ]]; then
-                echo "$new_crontab" | crontab -
-            else
-                # Remove entire crontab if no other entries
-                crontab -r 2>/dev/null || true
-            fi
-        else
-            # No other cron entries, remove crontab
-            crontab -r 2>/dev/null || true
-        fi
-
-        print_launchagent_success "Cron job removed successfully"
-        return 0
-    else
-        print_launchagent_info "No existing cron job found"
-        return 1
     fi
 }
 
@@ -430,15 +368,7 @@ show_launchagent_status() {
         echo -e "   Configuration: ${RED}❌ Not found${NC}"
     fi
 
-    # Show migration status
-    echo ""
-    echo "🔄 Migration Status:"
-    if detect_existing_cron; then
-        echo -e "   Cron job: ${YELLOW}⚠️  Still active${NC} (migration needed)"
-        echo -e "   ${BLUE}Run: selfcontrol-cli service migrate${NC}"
-    else
-        echo -e "   Cron job: ${GREEN}✅ Migrated/Clean${NC}"
-    fi
+
 }
 
 # Show LaunchAgent logs
@@ -470,71 +400,7 @@ show_launchagent_logs() {
     fi
 }
 
-# =============================================================================
-# MIGRATION FUNCTIONS
-# =============================================================================
 
-# Perform migration from cron to LaunchAgent
-migrate_from_cron() {
-    print_launchagent_info "Starting migration from cron to LaunchAgent..."
-    echo ""
-
-    # Check if migration is needed
-    if ! detect_existing_cron; then
-        if launchagent_plist_exists && launchagent_is_loaded; then
-            print_launchagent_success "Already using LaunchAgent, no migration needed"
-            return 0
-        else
-            print_launchagent_info "No cron job found, installing LaunchAgent with default settings"
-            install_launchagent "$DEFAULT_INTERVAL_MINUTES"
-            return $?
-        fi
-    fi
-
-    # Get existing cron configuration
-    local cron_interval
-    cron_interval=$(get_cron_config)
-    print_launchagent_info "Detected cron interval: ${cron_interval} minutes"
-
-    # Backup existing cron (optional step for safety)
-    local backup_file="$HOME/.local/share/selfcontrol-cli/cron_backup_$(date +%Y%m%d_%H%M%S).txt"
-    mkdir -p "$(dirname "$backup_file")"
-    if crontab -l > "$backup_file" 2>/dev/null; then
-        print_launchagent_info "Backed up cron to: $backup_file"
-    fi
-
-    # Install LaunchAgent with the same interval
-    if install_launchagent "$cron_interval"; then
-        print_launchagent_success "LaunchAgent installed successfully"
-
-        # Wait a moment for LaunchAgent to settle
-        sleep 3
-
-        # Verify LaunchAgent is working
-        if launchagent_is_loaded; then
-            print_launchagent_success "LaunchAgent is active"
-
-            # Remove cron job
-            if remove_cron_job; then
-                print_launchagent_success "Migration completed successfully!"
-                echo ""
-                print_launchagent_info "Your schedules will now run via LaunchAgent instead of cron"
-                print_launchagent_info "Check status with: selfcontrol-cli service status"
-                return 0
-            else
-                print_launchagent_warning "LaunchAgent installed but cron removal failed"
-                print_launchagent_info "You may need to manually remove the cron job"
-                return 1
-            fi
-        else
-            print_launchagent_error "LaunchAgent installation failed"
-            return 1
-        fi
-    else
-        print_launchagent_error "Failed to install LaunchAgent"
-        return 1
-    fi
-}
 
 # =============================================================================
 # EXPORTED FUNCTIONS
@@ -572,12 +438,9 @@ launchagent_main() {
             local lines="${1:-20}"
             show_launchagent_logs "$lines"
             ;;
-        "migrate")
-            migrate_from_cron
-            ;;
         *)
             echo "❌ Unknown service command: $command"
-            echo "Available commands: status, start, stop, restart, install, uninstall, logs, migrate"
+            echo "Available commands: status, start, stop, restart, install, uninstall, logs"
             return 1
             ;;
     esac

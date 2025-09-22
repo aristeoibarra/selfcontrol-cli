@@ -2,7 +2,7 @@
 
 # SelfControl CLI - Test Runner (Fixed Version)
 # Comprehensive test suite for production validation
-# Version: 2.1.0
+# Version: 3.0.0
 
 set -euo pipefail
 

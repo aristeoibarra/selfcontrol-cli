@@ -130,7 +130,7 @@ selfcontrol-cli start 0.5      # 30-minute block
 - Blocklist file not found
 - SelfControl.app not installed
 
-## 🤖 Service Management Commands (v2.1.0)
+## 🤖 Service Management Commands (v3.0.0)
 
 ### `selfcontrol-cli service status`
 
@@ -177,7 +177,7 @@ LaunchAgent Health: ✅ Running
    Configuration: ✅ Found
 
 🔄 Migration Status:
-   Legacy automation: ✅ Migrated/Clean
+
 ```
 
 ### `selfcontrol-cli service start`
@@ -257,50 +257,6 @@ selfcontrol-cli service logs
 
 # Show last 50 lines
 selfcontrol-cli service logs 50
-```
-
-### `selfcontrol-cli service migrate`
-
-Migrate from cron-based scheduling to LaunchAgent-based scheduling.
-
-**Usage:**
-
-```bash
-selfcontrol-cli service migrate
-```
-
-**Behavior:**
-
-- Detects existing cron job configuration
-- Preserves current scheduling interval
-- Creates and installs LaunchAgent with same settings
-- Removes cron job after successful LaunchAgent installation
-- Backs up cron configuration before removal
-- Shows completion status and next steps
-
-**Migration Process:**
-
-1. Detect existing cron job and extract configuration
-2. Create LaunchAgent plist with same interval
-3. Install and load LaunchAgent
-4. Verify LaunchAgent is working
-5. Remove cron job
-6. Confirm migration success
-
-**Example Output:**
-
-```
-ℹ️  Starting migration from cron to LaunchAgent...
-
-ℹ️  Detected cron interval: 5 minutes
-ℹ️  Backed up cron to: ~/.local/share/selfcontrol-cli/cron_backup_20240921_143022.txt
-✅ LaunchAgent installed successfully
-✅ LaunchAgent is active
-✅ Cron job removed successfully
-✅ Migration completed successfully!
-
-ℹ️  Your schedules will now run via LaunchAgent instead of cron
-ℹ️  Check status with: selfcontrol-cli service status
 ```
 
 ## ⏰ Schedule Management Commands

@@ -24,7 +24,7 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 - 🔐 **Passwordless sudo integration** for seamless automation
 - 🚀 **100% automated operation** - no manual intervention required
 
-### 🆕 Service Management (v2.1.0)
+### 🆕 Service Management (v3.0.0)
 
 - 🤖 **LaunchAgent integration** - Native macOS automation
 - 🔄 **Automatic migration** from legacy systems during updates
@@ -86,7 +86,7 @@ The installer will:
 - `selfcontrol-cli schedule test` - Test schedule logic in real-time
   (legacy)
 
-### 🤖 Service Management (v2.1.0)
+### 🤖 Service Management (v3.0.0)
 
 - `selfcontrol-cli service status` - Show LaunchAgent service status and diagnostics
 - `selfcontrol-cli service start` - Start LaunchAgent service
@@ -194,7 +194,7 @@ Complete example with all features:
 - **Multiple blocklists**: Different contexts (work, study, minimal)
 - **Smart logging**: Automatic rotation and cleanup
 
-## 🤖 Complete Automation Setup (v2.1.0)
+## 🤖 Complete Automation Setup (v3.0.0)
 
 ### Automatic Operation (No Manual Intervention Required)
 
@@ -213,7 +213,7 @@ Once installed and configured, SelfControl CLI operates **100% automatically** u
 #### 🔧 Setup for Complete Automation:
 
 ```bash
-# 1. Install with LaunchAgent automation (v2.1.0+)
+# 1. Install with LaunchAgent automation (v3.0.0+)
 ./scripts/install-production.sh
 
 # 2. Configure passwordless sudo (one-time setup)

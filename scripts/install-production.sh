@@ -2,7 +2,7 @@
 
 # SelfControl CLI - Production Installer
 # Robust installation script with comprehensive validation
-# Version: 2.1.0 (LaunchAgent Integration)
+# Version: 3.0.0 (LaunchAgent Integration)
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly INSTALLER_VERSION="2.1.0"
+readonly INSTALLER_VERSION="3.0.0"
 readonly INSTALL_DIR="$HOME/.local/bin"
 readonly LIB_DIR="$HOME/.local/lib/selfcontrol-cli"
 readonly CONFIG_DIR="$HOME/.config/selfcontrol-cli"
@@ -82,7 +82,7 @@ validate_dependencies() {
     print_success "SelfControl CLI found"
 
     # Check for required tools
-    local required_tools=("date" "bc" "crontab" "python3")
+    local required_tools=("date" "bc" "python3")
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
             print_error "Required tool not found: $tool"
@@ -203,49 +203,22 @@ setup_automation() {
     # Create templates directory in the ROOT_DIR location that launchagent.sh expects
     mkdir -p "$HOME/.local/templates"
     cp "templates/com.selfcontrol.cli.plist.template" "$HOME/.local/templates/"
-    print_success "Installed LaunchAgent template"    # Check for existing cron job and migrate
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
-        print_status "Migrating existing cron job to LaunchAgent..."
+    print_success "Installed LaunchAgent template"
 
-        # Use the migration functionality
-        local migrate_script="$HOME/.local/lib/selfcontrol-cli/migrate.sh"
-        if [[ -f "scripts/migrate.sh" ]]; then
-            cp "scripts/migrate.sh" "$LIB_DIR/"
-            chmod +x "$LIB_DIR/migrate.sh"
+    # Install LaunchAgent for scheduled blocks
+    print_status "Installing LaunchAgent for scheduled blocks..."
 
-            # Source required functions
-            export ROOT_DIR="$HOME/.local"
-            export RED GREEN YELLOW BLUE BOLD NC  # Export color variables for launchagent.sh
-            # shellcheck source=scripts/launchagent.sh
-            source "$LIB_DIR/launchagent.sh"
+    # Source required functions for LaunchAgent installation
+    export ROOT_DIR="$HOME/.local"
+    export RED GREEN YELLOW BLUE BOLD NC  # Export color variables for launchagent.sh
+    # shellcheck source=scripts/launchagent.sh
+    source "$LIB_DIR/launchagent.sh"
 
-            if migrate_from_cron; then
-                print_success "Successfully migrated from cron to LaunchAgent"
-            else
-                print_error "Migration failed - please run 'selfcontrol-cli service migrate' manually after installation"
-                return 1
-            fi
-        else
-            print_error "Migration script not found - installation incomplete"
-            return 1
-        fi
+    if install_launchagent 5; then
+        print_success "LaunchAgent installed and running"
     else
-        # Fresh LaunchAgent installation
-        print_status "Installing LaunchAgent for scheduled blocks..."
-
-        # Source required functions for LaunchAgent installation
-        export ROOT_DIR="$HOME/.local"
-        export RED GREEN YELLOW BLUE BOLD NC  # Export color variables for launchagent.sh
-        # shellcheck source=scripts/launchagent.sh
-        source "$LIB_DIR/launchagent.sh"
-
-        if install_launchagent 5; then
-            print_success "LaunchAgent installed and running"
-        else
-            print_error "LaunchAgent installation failed - automation will not work"
-            print_info "You can try manual installation later with: selfcontrol-cli service migrate"
-            return 1
-        fi
+        print_error "LaunchAgent installation failed - automation will not work"
+        return 1
     fi
 }
 
@@ -295,7 +268,7 @@ show_completion_info() {
     echo "4. Test schedules: selfcontrol-cli schedule test"
     echo "5. Check service status: selfcontrol-cli service status"
     echo ""
-    echo "New in v2.1.0:"
+    echo "New in v3.0.0:"
     echo "• LaunchAgent-based scheduling (native macOS automation)"
     echo "• Service management commands (start/stop/restart/logs)"
     echo "• Comprehensive service status and diagnostics"
@@ -333,19 +306,13 @@ uninstall() {
     done
     print_success "Removed from PATH"
 
-    # Remove LaunchAgent and cron jobs
+    # Remove LaunchAgent
     local launchagent_plist="$HOME/Library/LaunchAgents/com.selfcontrol.cli.scheduler.plist"
     if [[ -f "$launchagent_plist" ]]; then
         # Unload LaunchAgent if running
         launchctl unload "$launchagent_plist" 2>/dev/null || true
         rm -f "$launchagent_plist"
         print_success "Removed LaunchAgent"
-    fi
-
-    # Remove any remaining cron jobs
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli"; then
-        crontab -l 2>/dev/null | grep -v "selfcontrol-cli" | crontab -
-        print_success "Removed cron jobs"
     fi
 
     # No legacy symlinks to remove for new installation
