@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.selfcontrol.cli.scheduler</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/sudo</string>
+        <string>-n</string>
+        <string>{{USER_HOME}}/.local/bin/selfcontrol-cli</string>
+        <string>schedule</string>
+        <string>check</string>
+    </array>
+
+    <!-- TIMING: Run every N minutes -->
+    <key>StartInterval</key>
+    <integer>{{INTERVAL_SECONDS}}</integer>
+
+    <!-- ALWAYS RUN: Restart, sleep, login, etc. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>LaunchOnlyOnce</key>
+    <false/>
+
+    <!-- PERSISTENCE: Keep running always -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <true/>
+        <key>NetworkState</key>
+        <false/>
+    </dict>
+
+    <!-- RESTART: If process fails, restart it -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- TIMING: Run at specific minute intervals (alternative to StartInterval) -->
+    <!-- Uncomment this section if you want calendar-based scheduling instead -->
+    <!--
+    <key>StartCalendarInterval</key>
+    <array>
+        {{MINUTE_INTERVALS}}
+    </array>
+    -->
+
+    <!-- LOGGING -->
+    <key>StandardOutPath</key>
+    <string>{{USER_HOME}}/.local/share/selfcontrol-cli/logs/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{USER_HOME}}/.local/share/selfcontrol-cli/logs/launchd.error.log</string>
+
+    <!-- ENVIRONMENT: Ensure necessary variables are available -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:{{USER_HOME}}/.local/bin</string>
+        <key>HOME</key>
+        <string>{{USER_HOME}}</string>
+        <key>USER</key>
+        <string>{{USER_NAME}}</string>
+    </dict>
+
+    <!-- WORKING DIRECTORY -->
+    <key>WorkingDirectory</key>
+    <string>{{USER_HOME}}</string>
+
+    <!-- NICE VALUE: Lower priority to avoid system impact -->
+    <key>Nice</key>
+    <integer>10</integer>
+
+    <!-- PROCESS TYPE: Background daemon -->
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

@@ -5,6 +5,56 @@ All notable changes to SelfControl CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-09-21
+
+### 🤖 Major Feature: LaunchAgent Integration
+
+#### ✨ New Features
+
+##### **LaunchAgent-Based Automation**
+
+- **Native macOS Integration**: Replaced cron-based scheduling with LaunchAgent for improved reliability
+- **Automatic Migration**: Seamless migration from existing cron jobs to LaunchAgent during installation/updates
+- **Enhanced Persistence**: Better system restart/sleep/wake behavior with LaunchAgent integration
+- **Improved Error Handling**: More robust error recovery and restart capabilities
+
+##### **Service Management Commands**
+
+- **`selfcontrol-cli service status`**: Comprehensive service status and diagnostics
+- **`selfcontrol-cli service start`**: Start (load) LaunchAgent service
+- **`selfcontrol-cli service stop`**: Stop (unload) LaunchAgent service
+- **`selfcontrol-cli service restart`**: Restart LaunchAgent service
+- **`selfcontrol-cli service logs`**: Display LaunchAgent logs with configurable line count
+- **`selfcontrol-cli service migrate`**: Manual migration from cron to LaunchAgent
+
+##### **Enhanced Diagnostics**
+
+- **System Health Checks**: Comprehensive validation of sudo permissions, SelfControl.app availability, and configuration
+- **Migration Status**: Clear indication of cron vs LaunchAgent usage
+- **Log Management**: Better log file handling and display with size/line information
+- **Service Monitoring**: Real-time LaunchAgent status and health monitoring
+
+#### 🔧 Improvements
+
+- **Updated Production Installer**: Now installs LaunchAgent by default with cron fallback
+- **Automatic Detection**: Installer detects and migrates existing cron configurations
+- **Better Documentation**: Updated README and API documentation with LaunchAgent information
+- **Enhanced Error Messages**: More helpful error messages for LaunchAgent issues
+- **Improved Reliability**: LaunchAgent provides better scheduling reliability than cron on macOS
+
+#### 📁 New Files
+
+- `templates/com.selfcontrol.cli.plist.template`: LaunchAgent plist template
+- `scripts/launchagent.sh`: LaunchAgent management functions
+- `scripts/migrate.sh`: Migration utility script
+
+#### 🔄 Migration Notes
+
+- Existing cron installations will be automatically migrated to LaunchAgent during updates
+- Manual migration available via `selfcontrol-cli service migrate`
+- Cron configuration is backed up before removal
+- Rollback to cron available via migration script if needed
+
 ## [2.0.0] - 2025-09-15
 
 ### 🎉 Major Release: Automated Scheduled Blocking

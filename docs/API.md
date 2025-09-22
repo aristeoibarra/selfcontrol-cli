@@ -130,6 +130,179 @@ selfcontrol-cli start 0.5      # 30-minute block
 - Blocklist file not found
 - SelfControl.app not installed
 
+## 🤖 Service Management Commands (v2.1.0)
+
+### `selfcontrol-cli service status`
+
+Show comprehensive LaunchAgent service status and diagnostics.
+
+**Usage:**
+
+```bash
+selfcontrol-cli service status
+```
+
+**Output:**
+
+- LaunchAgent file existence and location
+- LaunchAgent load status (loaded/not loaded)
+- LaunchAgent health status (running/not running)
+- Detailed LaunchAgent information
+- Log file status and recent entries
+- System diagnostics (sudo permissions, SelfControl.app, configuration)
+- Migration status (cron vs LaunchAgent)
+
+**Example:**
+
+```
+📊 SelfControl CLI Service Status
+=================================
+
+LaunchAgent File: ✅ Exists (/Users/user/Library/LaunchAgents/com.selfcontrol.cli.scheduler.plist)
+LaunchAgent Status: ✅ Loaded
+LaunchAgent Health: ✅ Running
+
+📊 LaunchAgent Details:
+   Label: com.selfcontrol.cli.scheduler
+   Last Exit Status: 0
+   Program: /usr/bin/sudo
+
+📋 Log Files:
+   Output: ✅ Available (25 lines, 1.2KB)
+   Errors: ✅ No errors
+
+🔧 Diagnostics:
+   Sudo permissions: ✅ Configured
+   SelfControl.app: ✅ Available
+   Configuration: ✅ Found
+
+🔄 Migration Status:
+   Cron job: ✅ Migrated/Clean
+```
+
+### `selfcontrol-cli service start`
+
+Start (load) the LaunchAgent service.
+
+**Usage:**
+
+```bash
+selfcontrol-cli service start
+```
+
+**Behavior:**
+
+- Loads the LaunchAgent if it exists but is not loaded
+- Shows message if already loaded
+- Returns error if LaunchAgent plist doesn't exist
+
+### `selfcontrol-cli service stop`
+
+Stop (unload) the LaunchAgent service.
+
+**Usage:**
+
+```bash
+selfcontrol-cli service stop
+```
+
+**Behavior:**
+
+- Unloads the LaunchAgent if it's currently loaded
+- Shows message if not loaded
+- Schedules will not run while stopped
+
+### `selfcontrol-cli service restart`
+
+Restart the LaunchAgent service (unload then load).
+
+**Usage:**
+
+```bash
+selfcontrol-cli service restart
+```
+
+**Behavior:**
+
+- Unloads the LaunchAgent (if loaded)
+- Waits briefly
+- Loads the LaunchAgent again
+- Useful for applying configuration changes
+
+### `selfcontrol-cli service logs`
+
+Display LaunchAgent logs.
+
+**Usage:**
+
+```bash
+selfcontrol-cli service logs [lines]
+```
+
+**Parameters:**
+
+- `lines` (optional): Number of lines to show (default: 20)
+
+**Output:**
+
+- Recent output log entries
+- Recent error log entries (if any)
+- Formatted with timestamps and clear separation
+
+**Example:**
+
+```bash
+# Show last 20 lines
+selfcontrol-cli service logs
+
+# Show last 50 lines
+selfcontrol-cli service logs 50
+```
+
+### `selfcontrol-cli service migrate`
+
+Migrate from cron-based scheduling to LaunchAgent-based scheduling.
+
+**Usage:**
+
+```bash
+selfcontrol-cli service migrate
+```
+
+**Behavior:**
+
+- Detects existing cron job configuration
+- Preserves current scheduling interval
+- Creates and installs LaunchAgent with same settings
+- Removes cron job after successful LaunchAgent installation
+- Backs up cron configuration before removal
+- Shows completion status and next steps
+
+**Migration Process:**
+
+1. Detect existing cron job and extract configuration
+2. Create LaunchAgent plist with same interval
+3. Install and load LaunchAgent
+4. Verify LaunchAgent is working
+5. Remove cron job
+6. Confirm migration success
+
+**Example Output:**
+
+```
+ℹ️  Starting migration from cron to LaunchAgent...
+
+ℹ️  Detected cron interval: 5 minutes
+ℹ️  Backed up cron to: ~/.local/share/selfcontrol-cli/cron_backup_20240921_143022.txt
+✅ LaunchAgent installed successfully
+✅ LaunchAgent is active
+✅ Cron job removed successfully
+✅ Migration completed successfully!
+
+ℹ️  Your schedules will now run via LaunchAgent instead of cron
+ℹ️  Check status with: selfcontrol-cli service status
+```
+
 ## ⏰ Schedule Management Commands
 
 ### `selfcontrol-cli schedule list`

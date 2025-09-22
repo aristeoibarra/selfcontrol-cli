@@ -15,7 +15,7 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 ### 🆕 Advanced Scheduling System
 
 - ⏰ **Fully customizable scheduled blocks** with JSON configuration
-- 🤖 **Automatic execution** via cron integration with smart conflict resolution
+- 🤖 **Automatic execution** via native macOS LaunchAgent (more reliable than cron)
 - 📅 **Flexible time ranges** including midnight crossover support (e.g., 23:00-06:00)
 - 🎯 **Priority-based scheduling** for overlapping time slots
 - 🔍 **Real-time schedule testing** and debugging tools
@@ -23,6 +23,14 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 - 🛡️ **Duplicate prevention** to avoid conflicts with manual blocks
 - 🔐 **Passwordless sudo integration** for seamless automation
 - 🚀 **100% automated operation** - no manual intervention required
+
+### 🆕 Service Management (v2.1.0)
+
+- 🤖 **LaunchAgent integration** - Native macOS automation (replaces cron)
+- 🔄 **Automatic migration** from cron to LaunchAgent during updates
+- 📊 **Service management commands** - start, stop, restart, status, logs
+- 🛠️ **Advanced diagnostics** - comprehensive system health checks
+- 🔧 **Easy troubleshooting** - clear status reporting and log access
 
 ### 🔧 Production-Ready Features
 
@@ -50,7 +58,8 @@ The installer will:
 - 📁 Install files to standardized locations (`~/.local/bin`, `~/.config`, etc.)
 - 🔗 Setup PATH and shell integration automatically
 - ⚙️ Configure initial schedules and automation
-- 🤖 Setup cron job for automatic execution every 5 minutes
+- 🤖 Setup LaunchAgent for reliable automatic execution every 5 minutes
+- 🔄 Automatically migrate existing cron jobs to LaunchAgent
 - 🔐 Configure passwordless sudo for seamless automation
 - 🎯 Guide you through customization options
 
@@ -75,7 +84,16 @@ The installer will:
 - `selfcontrol-cli schedule disable <name>` - Disable specific schedule
 - `selfcontrol-cli schedule reload` - Reload configuration from file
 - `selfcontrol-cli schedule test` - Test schedule logic in real-time
-- `selfcontrol-cli schedule setup` - Setup automated scheduling with cron
+- `selfcontrol-cli schedule setup` - Setup automated scheduling with cron (legacy)
+
+### 🤖 Service Management (v2.1.0)
+
+- `selfcontrol-cli service status` - Show LaunchAgent service status and diagnostics
+- `selfcontrol-cli service start` - Start LaunchAgent service
+- `selfcontrol-cli service stop` - Stop LaunchAgent service
+- `selfcontrol-cli service restart` - Restart LaunchAgent service
+- `selfcontrol-cli service logs` - Show LaunchAgent logs
+- `selfcontrol-cli service migrate` - Migrate from cron to LaunchAgent
 
 ### 🔧 Utility Commands
 
@@ -176,51 +194,58 @@ Complete example with all features:
 - **Multiple blocklists**: Different contexts (work, study, minimal)
 - **Smart logging**: Automatic rotation and cleanup
 
-## 🤖 Complete Automation Setup
+## 🤖 Complete Automation Setup (v2.1.0)
 
 ### Automatic Operation (No Manual Intervention Required)
 
-Once installed and configured, SelfControl CLI operates **100% automatically**:
+Once installed and configured, SelfControl CLI operates **100% automatically** using native macOS LaunchAgent:
 
 #### ✅ What Happens Automatically:
 
-- **Every 5 minutes**: Cron checks for active schedules
+- **Every 5 minutes**: LaunchAgent checks for active schedules (more reliable than cron)
 - **Work hours (Mon-Fri 08:00-19:00)**: Automatically starts blocking
 - **Night hours (Daily 23:00-06:00)**: Automatically starts night blocking
 - **Schedule transitions**: Seamlessly switches between different blocklists
-- **After computer restart**: Continues working automatically
+- **After computer restart**: Continues working automatically (LaunchAgent persistence)
+- **System sleep/wake**: Resumes operation without manual intervention
 - **No password prompts**: Uses passwordless sudo configuration
 
 #### 🔧 Setup for Complete Automation:
 
 ```bash
-# 1. Install with automation
+# 1. Install with LaunchAgent automation (v2.1.0+)
 ./scripts/install-production.sh
 
 # 2. Configure passwordless sudo (one-time setup)
 sudo tee /etc/sudoers.d/selfcontrol-cli << 'EOF'
 # SelfControl CLI - Allow without password
-aristeoibarra ALL=(ALL) NOPASSWD: /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
+$(whoami) ALL=(ALL) NOPASSWD: $(which selfcontrol-cli) schedule check
 EOF
 
-# 3. Update cron job to use sudo
-(crontab -l 2>/dev/null | grep -v "selfcontrol-cli"; echo "*/5 * * * * sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check >/dev/null 2>&1") | crontab -
+# 3. Verify LaunchAgent is running
+selfcontrol-cli service status
 
-# 4. Verify automation is working
+# 4. Test schedule automation
 selfcontrol-cli schedule test
+
+# Optional: Migrate from existing cron setup
+selfcontrol-cli service migrate
 ```
 
 #### 📊 Monitoring Automation:
 
 ```bash
-# Check if automation is working
-selfcontrol-cli status
+# Check comprehensive service status
+selfcontrol-cli service status
 
-# View automation logs
+# View LaunchAgent logs
+selfcontrol-cli service logs
+
+# View schedule activity logs
 tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
 
-# Verify cron job
-crontab -l | grep selfcontrol-cli
+# Restart service if needed
+selfcontrol-cli service restart
 ```
 
 ## 🎯 Use Cases & Examples
