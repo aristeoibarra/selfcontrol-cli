@@ -102,48 +102,7 @@ perform_migration() {
     migrate_from_cron
 }
 
-# Perform rollback to cron (emergency function)
-rollback_to_cron() {
-    print_header "🔄 Rolling Back to Cron"
-    echo ""
-
-    print_warning "This will remove the LaunchAgent and restore cron scheduling"
-    read -p "Are you sure you want to continue? (y/N): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_info "Rollback cancelled"
-        return 0
-    fi
-
-    # Source the LaunchAgent functions
-    if [[ -f "$ROOT_DIR/scripts/launchagent.sh" ]]; then
-        # shellcheck source=scripts/launchagent.sh
-        source "$ROOT_DIR/scripts/launchagent.sh"
-    else
-        print_error "LaunchAgent script not found"
-        return 1
-    fi
-
-    # Uninstall LaunchAgent
-    print_info "Removing LaunchAgent..."
-    if uninstall_launchagent; then
-        print_success "LaunchAgent removed successfully"
-    else
-        print_warning "LaunchAgent removal had issues"
-    fi
-
-    # Restore cron job
-    print_info "Restoring cron job..."
-    local cron_entry="*/5 * * * * $ROOT_DIR/bin/selfcontrol-cli schedule check >/dev/null 2>&1"
-
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
-        print_info "Cron job already exists"
-    else
-        (crontab -l 2>/dev/null; echo "$cron_entry") | crontab -
-        print_success "Cron job restored: $cron_entry"
-    fi
-
-    print_success "Rollback completed successfully"
-}
+# Migration is one-way only - no rollback to cron supported in v2.1.0+
 
 # Show detailed migration report
 show_migration_report() {
@@ -222,7 +181,6 @@ COMMANDS:
     check       Check if migration is needed
     migrate     Perform automatic migration from cron to LaunchAgent
     install     Install fresh LaunchAgent (no existing cron)
-    rollback    Rollback from LaunchAgent to cron (emergency only)
     report      Show detailed system status and recommendations
     help        Show this help message
 
@@ -230,12 +188,11 @@ EXAMPLES:
     ./scripts/migrate.sh check         # Check migration status
     ./scripts/migrate.sh migrate       # Perform migration
     ./scripts/migrate.sh report        # Show detailed report
-    ./scripts/migrate.sh rollback      # Emergency rollback to cron
 
 NOTES:
     - Migration will preserve your current scheduling interval
     - Original cron job is backed up before removal
-    - LaunchAgent provides better reliability than cron
+    - LaunchAgent provides native macOS automation
     - Run 'report' command for personalized recommendations
 
 EOF
@@ -272,9 +229,6 @@ main() {
             fi
 
             install_launchagent 5
-            ;;
-        "rollback")
-            rollback_to_cron
             ;;
         "report")
             show_migration_report

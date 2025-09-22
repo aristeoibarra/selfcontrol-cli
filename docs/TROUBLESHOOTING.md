@@ -11,8 +11,8 @@ Common issues and solutions for SelfControl CLI.
 **Diagnosis:**
 
 ```bash
-# Check if cron job exists
-crontab -l | grep selfcontrol-cli
+# Check LaunchAgent status
+selfcontrol-cli service status
 
 # Check if sudo configuration exists
 ls -la /etc/sudoers.d/selfcontrol-cli
@@ -30,14 +30,15 @@ tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
 # 1. Configure passwordless sudo
 sudo tee /etc/sudoers.d/selfcontrol-cli << 'EOF'
 # SelfControl CLI - Allow without password
-aristeoibarra ALL=(ALL) NOPASSWD: /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
+# LaunchAgent handles automation - no sudo configuration needed
 EOF
 
-# 2. Update cron job to use sudo
-(crontab -l 2>/dev/null | grep -v "selfcontrol-cli"; echo "*/5 * * * * sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check >/dev/null 2>&1") | crontab -
+# 2. Restart LaunchAgent service
+selfcontrol-cli service restart
 
 # 3. Test automation
-sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
+# Check LaunchAgent functionality
+selfcontrol-cli service logs
 ```
 
 ### Schedule Detection Issues
@@ -133,21 +134,21 @@ ls -la ~/.local/bin/selfcontrol-cli
 source ~/.zshrc
 ```
 
-### Cron Job Not Working
+### LaunchAgent Not Working
 
 **Error:** Schedules not executing automatically
 
 **Solution:**
 
 ```bash
-# Check cron service
-sudo launchctl list | grep cron
+# Check LaunchAgent status
+selfcontrol-cli service status
 
-# Verify cron job
-crontab -l
+# Restart LaunchAgent
+selfcontrol-cli service restart
 
-# Re-setup automation
-selfcontrol-cli schedule setup
+# Check logs for errors
+selfcontrol-cli service logs
 ```
 
 ## ⚙️ Configuration Issues
@@ -181,8 +182,8 @@ selfcontrol-cli schedule test
 # Check current time vs schedule
 selfcontrol-cli schedule status
 
-# Verify cron job
-crontab -l | grep selfcontrol
+# Check LaunchAgent logs
+selfcontrol-cli service logs
 ```
 
 ### Blocklist Not Found
@@ -270,8 +271,8 @@ selfcontrol-cli schedule test
 # View schedule logs
 tail -f ~/.local/share/selfcontrol-cli/logs/schedule.log
 
-# Check cron logs
-grep CRON /var/log/system.log
+# Check LaunchAgent logs
+selfcontrol-cli service logs 50
 ```
 
 ### Validate Installation

@@ -185,26 +185,24 @@ setup_automation() {
     print_status "Setting up automated scheduling with LaunchAgent..."
 
     # Copy LaunchAgent script to libraries
-    if [[ -f "scripts/launchagent.sh" ]]; then
-        cp "scripts/launchagent.sh" "$LIB_DIR/"
-        chmod +x "$LIB_DIR/launchagent.sh"
-        print_success "Installed LaunchAgent management script"
-    else
-        print_warning "LaunchAgent script not found - using fallback cron"
-        setup_automation_fallback
-        return 0
+    if [[ ! -f "scripts/launchagent.sh" ]]; then
+        print_error "LaunchAgent script not found: scripts/launchagent.sh"
+        return 1
     fi
 
+    cp "scripts/launchagent.sh" "$LIB_DIR/"
+    chmod +x "$LIB_DIR/launchagent.sh"
+    print_success "Installed LaunchAgent management script"
+
     # Copy LaunchAgent template
-    if [[ -f "templates/com.selfcontrol.cli.plist.template" ]]; then
-        mkdir -p "$LIB_DIR/../templates"
-        cp "templates/com.selfcontrol.cli.plist.template" "$LIB_DIR/../templates/"
-        print_success "Installed LaunchAgent template"
-    else
-        print_warning "LaunchAgent template not found - using fallback cron"
-        setup_automation_fallback
-        return 0
+    if [[ ! -f "templates/com.selfcontrol.cli.plist.template" ]]; then
+        print_error "LaunchAgent template not found: templates/com.selfcontrol.cli.plist.template"
+        return 1
     fi
+
+    mkdir -p "$LIB_DIR/../templates"
+    cp "templates/com.selfcontrol.cli.plist.template" "$LIB_DIR/../templates/"
+    print_success "Installed LaunchAgent template"
 
     # Check for existing cron job and migrate
     if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
@@ -224,10 +222,12 @@ setup_automation() {
             if migrate_from_cron; then
                 print_success "Successfully migrated from cron to LaunchAgent"
             else
-                print_warning "Migration failed - keeping existing cron job"
+                print_error "Migration failed - please run 'selfcontrol-cli service migrate' manually after installation"
+                return 1
             fi
         else
-            print_warning "Migration script not found - keeping existing cron job"
+            print_error "Migration script not found - installation incomplete"
+            return 1
         fi
     else
         # Fresh LaunchAgent installation
@@ -241,29 +241,13 @@ setup_automation() {
         if install_launchagent 5; then
             print_success "LaunchAgent installed and running"
         else
-            print_warning "LaunchAgent installation failed - using fallback cron"
-            setup_automation_fallback
+            print_error "LaunchAgent installation failed"
+            return 1
         fi
     fi
 }
 
-# Fallback to cron if LaunchAgent installation fails
-setup_automation_fallback() {
-    print_status "Setting up cron fallback..."
 
-    # Check if cron job already exists
-    if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
-        print_success "Existing cron job found"
-        return 0
-    fi
-
-    # Add cron job
-    local cron_entry
-    cron_entry="*/5 * * * * $INSTALL_DIR/selfcontrol-cli schedule check >/dev/null 2>&1"
-
-    (crontab -l 2>/dev/null; echo "$cron_entry") | crontab -
-    print_success "Added cron job for automated scheduling"
-}
 
 run_post_install_tests() {
     print_header "🧪 Post-Installation Tests"
@@ -310,9 +294,9 @@ show_completion_info() {
     echo "5. Check service status: selfcontrol-cli service status"
     echo ""
     echo "New in v2.1.0:"
-    echo "• LaunchAgent-based scheduling (more reliable than cron)"
+    echo "• LaunchAgent-based scheduling (native macOS automation)"
     echo "• Service management commands (start/stop/restart/logs)"
-    echo "• Automatic migration from cron to LaunchAgent"
+    echo "• Comprehensive service status and diagnostics"
     echo ""
     echo "For help, run: selfcontrol-cli help"
 }

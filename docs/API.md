@@ -8,7 +8,7 @@ SelfControl CLI provides a unified command interface for managing SelfControl.ap
 
 ### 🤖 Automation Features
 
-- **Automatic Execution**: Cron job runs every 5 minutes
+- **Automatic Execution**: LaunchAgent runs every 5 minutes
 - **Passwordless Sudo**: Seamless operation without password prompts
 - **Schedule Detection**: Intelligent detection of active schedules
 - **Conflict Resolution**: Smart handling of overlapping schedules
@@ -51,7 +51,7 @@ $ selfcontrol-cli status
 ✅ SelfControl: INACTIVE
 ⚠️  Schedule 'work_hours' should be active!
 ⏰ Should run until: 17:00 (2h 15m left)
-💡 Run 'selfcontrol-cli schedule check' to start scheduled block
+💡 LaunchAgent will automatically start scheduled blocks
 ```
 
 ### `selfcontrol-cli info`
@@ -150,7 +150,7 @@ selfcontrol-cli service status
 - Detailed LaunchAgent information
 - Log file status and recent entries
 - System diagnostics (sudo permissions, SelfControl.app, configuration)
-- Migration status (cron vs LaunchAgent)
+- Migration status (legacy systems vs LaunchAgent)
 
 **Example:**
 
@@ -177,7 +177,7 @@ LaunchAgent Health: ✅ Running
    Configuration: ✅ Found
 
 🔄 Migration Status:
-   Cron job: ✅ Migrated/Clean
+   Legacy automation: ✅ Migrated/Clean
 ```
 
 ### `selfcontrol-cli service start`
@@ -463,45 +463,6 @@ Current time: 14:30 (monday)
 🎯 Currently active: work_hours
 ```
 
-### `selfcontrol-cli schedule setup`
-
-Setup automated scheduling with cron.
-
-**Usage:**
-
-```bash
-selfcontrol-cli schedule setup
-```
-
-**Behavior:**
-
-- Adds cron job to check schedules every 5 minutes
-- Checks for existing cron jobs
-- Configures: `*/5 * * * * selfcontrol-cli schedule check`
-
-**Cron Job:**
-
-```bash
-*/5 * * * * /path/to/selfcontrol-cli schedule check >/dev/null 2>&1
-```
-
-### `selfcontrol-cli schedule check`
-
-Internal command called by cron.
-
-**Usage:**
-
-```bash
-selfcontrol-cli schedule check
-```
-
-**Behavior:**
-
-- Checks for active schedules
-- Starts blocks if needed
-- Prevents duplicate blocks
-- Logs all actions
-
 ## 🔧 Utility Commands
 
 ### `selfcontrol-cli init`
@@ -672,16 +633,19 @@ cp ~/.config/selfcontrol-cli/blocklist.example.selfcontrol \
 }
 ```
 
-### Automation Integration
+### Service Integration
 
-Manual cron setup:
+LaunchAgent automation is handled automatically during installation. Use service commands for management:
 
 ```bash
-# Add to crontab
-crontab -e
+# Check service status
+selfcontrol-cli service status
 
-# Add line:
-*/5 * * * * /path/to/selfcontrol-cli schedule check >/dev/null 2>&1
+# Restart service if needed
+selfcontrol-cli service restart
+
+# View service logs
+selfcontrol-cli service logs
 ```
 
 ## 📚 Examples
@@ -698,8 +662,8 @@ selfcontrol-cli init
 # 3. Test configuration
 selfcontrol-cli schedule test
 
-# 4. Enable automation
-selfcontrol-cli schedule setup
+# 4. Check LaunchAgent status
+selfcontrol-cli service status
 
 # 5. Monitor status
 selfcontrol-cli status

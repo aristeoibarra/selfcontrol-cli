@@ -15,7 +15,7 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 ### 🆕 Advanced Scheduling System
 
 - ⏰ **Fully customizable scheduled blocks** with JSON configuration
-- 🤖 **Automatic execution** via native macOS LaunchAgent (more reliable than cron)
+- 🤖 **Automatic execution** via native macOS LaunchAgent
 - 📅 **Flexible time ranges** including midnight crossover support (e.g., 23:00-06:00)
 - 🎯 **Priority-based scheduling** for overlapping time slots
 - 🔍 **Real-time schedule testing** and debugging tools
@@ -26,8 +26,8 @@ A powerful command-line interface for SelfControl.app with **automated scheduled
 
 ### 🆕 Service Management (v2.1.0)
 
-- 🤖 **LaunchAgent integration** - Native macOS automation (replaces cron)
-- 🔄 **Automatic migration** from cron to LaunchAgent during updates
+- 🤖 **LaunchAgent integration** - Native macOS automation
+- 🔄 **Automatic migration** from legacy systems during updates
 - 📊 **Service management commands** - start, stop, restart, status, logs
 - 🛠️ **Advanced diagnostics** - comprehensive system health checks
 - 🔧 **Easy troubleshooting** - clear status reporting and log access
@@ -59,7 +59,7 @@ The installer will:
 - 🔗 Setup PATH and shell integration automatically
 - ⚙️ Configure initial schedules and automation
 - 🤖 Setup LaunchAgent for reliable automatic execution every 5 minutes
-- 🔄 Automatically migrate existing cron jobs to LaunchAgent
+- 🔄 Automatically migrate from legacy automation systems
 - 🔐 Configure passwordless sudo for seamless automation
 - 🎯 Guide you through customization options
 
@@ -84,7 +84,7 @@ The installer will:
 - `selfcontrol-cli schedule disable <name>` - Disable specific schedule
 - `selfcontrol-cli schedule reload` - Reload configuration from file
 - `selfcontrol-cli schedule test` - Test schedule logic in real-time
-- `selfcontrol-cli schedule setup` - Setup automated scheduling with cron (legacy)
+  (legacy)
 
 ### 🤖 Service Management (v2.1.0)
 
@@ -93,7 +93,7 @@ The installer will:
 - `selfcontrol-cli service stop` - Stop LaunchAgent service
 - `selfcontrol-cli service restart` - Restart LaunchAgent service
 - `selfcontrol-cli service logs` - Show LaunchAgent logs
-- `selfcontrol-cli service migrate` - Migrate from cron to LaunchAgent
+- `selfcontrol-cli service migrate` - Migrate from legacy automation
 
 ### 🔧 Utility Commands
 
@@ -202,7 +202,7 @@ Once installed and configured, SelfControl CLI operates **100% automatically** u
 
 #### ✅ What Happens Automatically:
 
-- **Every 5 minutes**: LaunchAgent checks for active schedules (more reliable than cron)
+- **Every 5 minutes**: LaunchAgent checks for active schedules
 - **Work hours (Mon-Fri 08:00-19:00)**: Automatically starts blocking
 - **Night hours (Daily 23:00-06:00)**: Automatically starts night blocking
 - **Schedule transitions**: Seamlessly switches between different blocklists
@@ -216,11 +216,8 @@ Once installed and configured, SelfControl CLI operates **100% automatically** u
 # 1. Install with LaunchAgent automation (v2.1.0+)
 ./scripts/install-production.sh
 
-# 2. Configure passwordless sudo (one-time setup)
-sudo tee /etc/sudoers.d/selfcontrol-cli << 'EOF'
-# SelfControl CLI - Allow without password
-$(whoami) ALL=(ALL) NOPASSWD: $(which selfcontrol-cli) schedule check
-EOF
+# 2. LaunchAgent handles automation automatically
+# No manual sudo configuration needed
 
 # 3. Verify LaunchAgent is running
 selfcontrol-cli service status
@@ -228,7 +225,7 @@ selfcontrol-cli service status
 # 4. Test schedule automation
 selfcontrol-cli schedule test
 
-# Optional: Migrate from existing cron setup
+# Optional: Migrate from legacy automation
 selfcontrol-cli service migrate
 ```
 
@@ -364,16 +361,16 @@ selfcontrol-cli init
 
 ```bash
 # Solution: Setup automated scheduling
-selfcontrol-cli schedule setup
+selfcontrol-cli service status
 
 # Test schedule logic
 selfcontrol-cli schedule test
 
-# Check if cron is running
-crontab -l | grep selfcontrol-cli
+# Check service status
+selfcontrol-cli service status
 
-# Verify sudo configuration
-sudo /Users/aristeoibarra/.local/bin/selfcontrol-cli schedule check
+# Check LaunchAgent logs
+selfcontrol-cli service logs
 ```
 
 ### Debug Mode

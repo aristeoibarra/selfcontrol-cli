@@ -76,7 +76,14 @@ COMMANDS:
     schedule disable <name>     Disable specific schedule
     schedule reload     Reload configuration from file
     schedule test       Test schedule logic in real-time
-    schedule setup      Setup automated scheduling with cron
+
+🛠️ Service Management (LaunchAgent):
+    service status      Show LaunchAgent service status
+    service start       Start (load) LaunchAgent service
+    service stop        Stop (unload) LaunchAgent service
+    service restart     Restart LaunchAgent service
+    service logs [n]    Show LaunchAgent logs (default: 20 lines)
+    service migrate     Migrate from cron to LaunchAgent
 
 🤖 Service Management (v2.1.0):
     service status      Show LaunchAgent service status
@@ -94,6 +101,8 @@ EXAMPLES:
     selfcontrol-cli schedule list       # Show all schedules
     selfcontrol-cli schedule enable work_hours
     selfcontrol-cli schedule test       # Test schedule logic
+    selfcontrol-cli service status      # Check LaunchAgent status
+    selfcontrol-cli service migrate     # Migrate from cron to LaunchAgent
 
 For more information, visit:
 https://github.com/aristeoibarra/selfcontrol-cli
@@ -168,7 +177,7 @@ JSON
     echo "Next steps:"
     echo "1. Customize your schedule: $SCHEDULE_CONFIG"
     echo "2. Customize your blocklist: $default_blocklist"
-    echo "3. Run 'selfcontrol-cli schedule setup' to enable automation"
+    echo "3. Ensure LaunchAgent is running: selfcontrol-cli service status"
     echo "4. Test with 'selfcontrol-cli schedule test'"
 }
 
@@ -222,7 +231,7 @@ cmd_status() {
                     remaining=$(get_remaining_minutes "$end_time")
                     echo "⚠️  Schedule '$schedule_name' should be active!"
                     echo "⏰ Should run until: $end_time ($((remaining / 60))h $((remaining % 60))m left)"
-                    echo "💡 Run 'selfcontrol-cli schedule check' to start scheduled block"
+                    echo "💡 LaunchAgent will automatically start scheduled blocks"
                 else
                     echo "💡 Ready to start a new block"
                 fi
@@ -442,37 +451,9 @@ except:
         "test")
             test_schedule_logic
             ;;
-        "setup")
-            echo "🤖 Setting up automated scheduling..."
-            echo ""
-            echo "This will configure cron to check schedules every 5 minutes."
-            echo ""
-
-            # Check if cron job already exists
-            if crontab -l 2>/dev/null | grep -q "selfcontrol-cli schedule check"; then
-                echo "⚠️  Cron job already exists"
-                echo "Current cron jobs:"
-                crontab -l 2>/dev/null | grep "selfcontrol-cli"
-                return 0
-            fi
-
-            # Add cron job
-            local cron_entry
-            cron_entry="*/5 * * * * $ROOT_DIR/bin/selfcontrol-cli schedule check >/dev/null 2>&1"
-
-            (crontab -l 2>/dev/null; echo "$cron_entry") | crontab -
-            echo "✅ Added cron job: $cron_entry"
-            echo ""
-            echo "Automated scheduling is now enabled!"
-            echo "Schedules will be checked every 5 minutes."
-            ;;
-        "check")
-            # This is called by cron
-            check_and_execute_schedules
-            ;;
         *)
             echo "❌ Unknown schedule command: $subcommand"
-            echo "Available commands: list, status, enable, disable, reload, test, setup"
+            echo "Available commands: list, status, enable, disable, reload, test"
             return 1
             ;;
     esac

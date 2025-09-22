@@ -7,16 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0] - 2025-09-21
 
-### 🤖 Major Feature: LaunchAgent Integration
+### 🤖 Major Feature: Complete LaunchAgent Migration
 
 #### ✨ New Features
 
-##### **LaunchAgent-Based Automation**
+##### **LaunchAgent-Only Automation**
 
-- **Native macOS Integration**: Replaced cron-based scheduling with LaunchAgent for improved reliability
+- **Native macOS Integration**: Completely replaced cron-based scheduling with LaunchAgent
 - **Automatic Migration**: Seamless migration from existing cron jobs to LaunchAgent during installation/updates
-- **Enhanced Persistence**: Better system restart/sleep/wake behavior with LaunchAgent integration
-- **Improved Error Handling**: More robust error recovery and restart capabilities
+- **Enhanced Persistence**: Better system restart/sleep/wake behavior with native macOS integration
+- **Improved Reliability**: More robust error recovery and restart capabilities without cron dependencies
 
 ##### **Service Management Commands**
 
@@ -36,11 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### 🔧 Improvements
 
-- **Updated Production Installer**: Now installs LaunchAgent by default with cron fallback
+- **LaunchAgent-Only Installer**: Production installer now requires LaunchAgent (no cron fallback)
 - **Automatic Detection**: Installer detects and migrates existing cron configurations
-- **Better Documentation**: Updated README and API documentation with LaunchAgent information
+- **Simplified Documentation**: Updated README and API documentation to focus on LaunchAgent
 - **Enhanced Error Messages**: More helpful error messages for LaunchAgent issues
-- **Improved Reliability**: LaunchAgent provides better scheduling reliability than cron on macOS
+- **Eliminated Dependencies**: Removed all cron dependencies for better macOS integration
 
 #### 📁 New Files
 
@@ -48,12 +48,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/launchagent.sh`: LaunchAgent management functions
 - `scripts/migrate.sh`: Migration utility script
 
+#### 🗑️ Removed Features
+
+##### **Complete Cron Elimination**
+
+- **Removed `schedule setup` command**: No longer needed with automatic LaunchAgent installation
+- **Removed `schedule check` command**: Internal automation now handled by LaunchAgent
+- **Removed cron fallback**: Installation fails if LaunchAgent components are missing
+- **Removed cron documentation**: All documentation now focuses on LaunchAgent
+- **Simplified workflow**: No manual automation setup required
+
 #### 🔄 Migration Notes
 
 - Existing cron installations will be automatically migrated to LaunchAgent during updates
 - Manual migration available via `selfcontrol-cli service migrate`
 - Cron configuration is backed up before removal
-- Rollback to cron available via migration script if needed
+- No rollback to cron available - LaunchAgent is now the only supported automation method
 
 ## [2.0.0] - 2025-09-15
 
@@ -98,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `selfcontrol-cli schedule disable <name>` - Disable specific schedule
 - `selfcontrol-cli schedule reload` - Reload configuration from file
 - `selfcontrol-cli schedule test` - Test schedule logic in real-time
-- `selfcontrol-cli schedule setup` - Setup automated scheduling with cron
+
 - `selfcontrol-cli init` - Initialize configuration and directories
 
 #### 🛠️ Enhanced Commands
